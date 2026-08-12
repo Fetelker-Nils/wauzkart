@@ -1,0 +1,12 @@
+{
+  "name": "wauzkart-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Static Wauz Kart website.",
+  "scripts": {
+    "build": "node scripts/build-static.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

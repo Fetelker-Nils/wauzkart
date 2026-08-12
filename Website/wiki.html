@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Kleine Wauz Kart Wiki mit Modi, Items, Strecken, Steuerung und Fortschritt.">
+    <title>Wiki - Wauz Kart</title>
+    <link rel="icon" href="assets/icon-small.webp">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header class="subhero wiki-hero" id="top">
+      <nav class="nav" aria-label="Hauptnavigation">
+        <a class="brand" href="/">
+          <img src="assets/icon-small.webp" alt="">
+          <span>Wauz Kart</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Start</a>
+          <a href="/garage">Garage</a>
+          <a href="/wiki">Wiki</a>
+          <a href="/#download">Download</a>
+        </div>
+      </nav>
+
+      <div class="subhero-content">
+        <p class="eyebrow">Wiki</p>
+        <h1>Kleine Wauz-Kart-Wiki</h1>
+        <p class="lead">Alles Wichtige zu Modi, Items, Strecken, Steuerung, Highlights und Fortschritt auf einer Seite.</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="band wiki-layout">
+        <aside class="wiki-index" aria-label="Wiki Inhalt">
+          <a href="#modi">Modi</a>
+          <a href="#items">Items</a>
+          <a href="#strecken">Strecken</a>
+          <a href="#steuerung">Steuerung</a>
+          <a href="#fortschritt">Fortschritt</a>
+          <a href="#highlights">Highlights</a>
+        </aside>
+
+        <div class="wiki-content">
+          <section id="modi" class="wiki-panel">
+            <p class="eyebrow">Modi</p>
+            <h2>Spielmodi</h2>
+            <div class="wiki-card-grid" id="mode-grid"></div>
+          </section>
+
+          <section id="items" class="wiki-panel">
+            <p class="eyebrow">Items</p>
+            <h2>Power-ups und Boxen</h2>
+            <p>Item-Boxen geben nach kurzer Roulette-Animation automatisch ein Item. Angriffe fliegen sichtbar zum Ziel und tauchen auch in Highlights auf.</p>
+            <div class="wiki-card-grid" id="item-grid"></div>
+          </section>
+
+          <section id="strecken" class="wiki-panel">
+            <p class="eyebrow">Strecken</p>
+            <h2>Maps und Freischaltungen</h2>
+            <div class="track-table" id="track-table"></div>
+          </section>
+
+          <section id="steuerung" class="wiki-panel">
+            <p class="eyebrow">Steuerung</p>
+            <h2>Tasten</h2>
+            <div class="control-grid">
+              <article><strong>Spieler 1</strong><span>W A S D</span></article>
+              <article><strong>Spieler 2</strong><span>Pfeiltasten</span></article>
+              <article><strong>Spieler 3</strong><span>T F G H</span></article>
+              <article><strong>Spieler 4</strong><span>I J K L</span></article>
+              <article><strong>Kamera</strong><span>F3</span></article>
+              <article><strong>Verlassen</strong><span>ESC</span></article>
+            </div>
+          </section>
+
+          <section id="fortschritt" class="wiki-panel">
+            <p class="eyebrow">Fortschritt</p>
+            <h2>XP, Level und Erfolge</h2>
+            <p>Nach Rennen bekommst du XP. Neue Level schalten nach und nach Charaktere, Autos und Strecken frei. Scores, Rennen und Abzeichen werden lokal in Roaming gespeichert, nicht in den Assets.</p>
+          </section>
+
+          <section id="highlights" class="wiki-panel">
+            <p class="eyebrow">Highlights</p>
+            <h2>Replay-Regeln</h2>
+            <p>Highlights zeigen wichtige Rennmomente normal schnell: Start des besten Spielers, Attacken, Aufholen, den letzten Spieler und die Zielkamera bis kurz ueber die Ziellinie.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Wauz Kart Wiki</span>
+      <a href="#top">Nach oben</a>
+    </footer>
+
+    <script src="script.js"></script>
+    <script type="module">
+      import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@latest/dist/index.js';
+      inject();
+    </script>
+  </body>
+</html>

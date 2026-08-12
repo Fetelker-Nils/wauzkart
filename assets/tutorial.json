@@ -1,0 +1,52 @@
+{
+  "title": "Wauz Kart 3D  Anleitung",
+  "sections": [
+    {
+      "title": "Ziel",
+      "text": [
+        "Fahre die eingestellte Rundenzahl und komme als Erstes ins Ziel.",
+        "Kollisionen mit Autos und Hindernissen kosten Zeit."
+      ]
+    },
+    {
+      "title": "Steuerung",
+      "text": [
+        "Spieler 1: W / A / S / D",
+        "Spieler 2: Pfeiltasten",
+        "Spieler 3: T / F / G / H",
+        "Spieler 4: I / J / K / L",
+        "Schnellstart: Bei \"2!\" Vorwrts drcken (Rocket-Start)."
+      ]
+    },
+    {
+      "title": "Power-Ups",
+      "text": [
+        "Goldene Power-Ups spawnen zufllig auf der Strecke und geben einen Speed-Boost."
+      ]
+    },
+    {
+      "title": "Item-Kstchen",
+      "text": [
+        "Die blauen Kstchen haben feste Positionen und regenerieren sich alle 5 Sekunden.",
+        "Wenn du ein Kstchen berhrst, bekommst du ein Item. Oben rechts erscheint ein kleines Glcksrad.",
+        "Das Item wird automatisch nach 2 Sekunden ausgelst."
+      ]
+    },
+    {
+      "title": "Items (aus Kstchen)",
+      "text": [
+        "Abknaller: Zielt auf den nchsten Gegner und lst bei ihm 3 Sekunden Crash aus.",
+        "Turbo: Kurzer, starker Speed-Boost.",
+        "Wirbler: Dreht den nchsten Gegner und bremst ihn kurz aus."
+      ]
+    },
+    {
+      "title": "Tipps",
+      "text": [
+        "In Kurven ist eine saubere Linie oft schneller als wildes Lenken.",
+        "Items sind stark  versuche Kstchen nach 10 Sekunden Spielzeit mitzunehmen."
+      ]
+    }
+  ]
+}
+

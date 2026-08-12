@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+.venv/
+venv/
+env/
+
+build/
+dist/
+*.spec
+
+assets/wauzkart.exe
+Website/assets/wauzkart.exe
+Website/node_modules/
+Website/dist/
+Website/.vercel/
+_website_git_backup/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+*.log
+npm-debug.log*
+
+# This workflow is written through the GitHub connector because the local PAT
+# does not have workflow scope.
+.github/workflows/release.yml
