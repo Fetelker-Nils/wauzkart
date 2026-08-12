@@ -9,18 +9,6 @@
     {
       "source": "/download/wauzkart",
       "destination": "/api/index.js"
-    },
-    {
-      "source": "/garage",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/wiki",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/((?!assets/|style.css|script.js).*)",
-      "destination": "/api/index.js"
     }
   ]
 }

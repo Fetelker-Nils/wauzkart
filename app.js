@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const express = require("express");
-const wikiData = require("./data/wiki-data");
+const wikiData = require("./data/wiki-data.json");
 
 function createApp(options = {}) {
   const app = express();

@@ -76,7 +76,10 @@ async function loadWikiData() {
     return;
   }
 
-  const response = await fetch("/api/wiki");
+  let response = await fetch("/data/wiki-data.json");
+  if (!response.ok) {
+    response = await fetch("/api/wiki");
+  }
   if (!response.ok) {
     throw new Error("Wiki-Daten konnten nicht geladen werden.");
   }
