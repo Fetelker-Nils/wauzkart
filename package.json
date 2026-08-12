@@ -1,0 +1,12 @@
+{
+  "name": "wauzkart",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Wauz Kart game project and static website.",
+  "scripts": {
+    "build": "node scripts/build-vercel.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
