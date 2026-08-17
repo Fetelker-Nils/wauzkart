@@ -28,3 +28,6 @@ npm-debug.log*
 # This workflow is written through the GitHub connector because the local PAT
 # does not have workflow scope.
 .github/workflows/release.yml
+
+.vercel
+.env*

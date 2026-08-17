@@ -1,0 +1,16 @@
+.git
+.github
+.vercel
+__pycache__
+_website_git_backup
+assets
+build
+src
+Website/node_modules
+Website/.vercel
+Website/dist
+*.spec
+*.pyc
+*.pyo
+*.exe
+*.zip
