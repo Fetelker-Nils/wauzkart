@@ -32,15 +32,15 @@ jobs:
         run: |
           pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart --icon assets\icon.ico --paths src --hidden-import wauzkart.app --add-data "assets;assets" wauz_kart.py
 
-      - name: Package Windows
+      - name: Prepare Windows installer
         run: |
-          Compress-Archive -Path dist\wauzkart.exe -DestinationPath wauzkart-windows.zip -Force
+          Copy-Item dist\wauzkart.exe wauzkart-windows.exe
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: wauzkart-windows
-          path: wauzkart-windows.zip
+          path: wauzkart-windows.exe
 
   build-linux:
     name: Linux
@@ -70,15 +70,37 @@ jobs:
           pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --add-data "assets:assets" wauz_kart.py
           chmod +x dist/wauzkart-linux
 
-      - name: Package Linux
+      - name: Package Linux AppImage
         run: |
-          zip -j wauzkart-linux.zip dist/wauzkart-linux
+          mkdir -p WauzKart.AppDir/usr/bin
+          cp dist/wauzkart-linux WauzKart.AppDir/usr/bin/wauzkart
+          chmod +x WauzKart.AppDir/usr/bin/wauzkart
+          cp assets/icon.png WauzKart.AppDir/wauzkart.png
+          cat > WauzKart.AppDir/AppRun <<'SH'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/wauzkart" "$@"
+          SH
+          chmod +x WauzKart.AppDir/AppRun
+          cat > WauzKart.AppDir/wauzkart.desktop <<'DESKTOP'
+          [Desktop Entry]
+          Type=Application
+          Name=Wauz Kart
+          Exec=wauzkart
+          Icon=wauzkart
+          Categories=Game;
+          Terminal=false
+          DESKTOP
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool
+          chmod +x appimagetool
+          ARCH=x86_64 ./appimagetool WauzKart.AppDir wauzkart-linux.AppImage
+          chmod +x wauzkart-linux.AppImage
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: wauzkart-linux
-          path: wauzkart-linux.zip
+          path: wauzkart-linux.AppImage
 
   build-macos:
     name: macOS
@@ -102,15 +124,15 @@ jobs:
         run: |
           pyinstaller --noconfirm --clean --windowed --name wauzkart-macos --paths src --hidden-import wauzkart.app --add-data "assets:assets" wauz_kart.py
 
-      - name: Package macOS
+      - name: Package macOS DMG
         run: |
-          ditto -c -k --sequesterRsrc --keepParent dist/wauzkart-macos.app wauzkart-macos.zip
+          hdiutil create -volname "Wauz Kart" -srcfolder dist/wauzkart-macos.app -ov -format UDZO wauzkart-macos.dmg
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: wauzkart-macos
-          path: wauzkart-macos.zip
+          path: wauzkart-macos.dmg
 
   release:
     name: Publish Release
@@ -129,5 +151,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: release-assets/**/*.zip
+          files: |
+            release-assets/**/*.exe
+            release-assets/**/*.AppImage
+            release-assets/**/*.dmg
           generate_release_notes: true
