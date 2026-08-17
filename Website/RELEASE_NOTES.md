@@ -9,10 +9,12 @@ Erste Website-Release fuer Wauz Kart.
 - Garage-Seite mit Charakteren und Autos
 - kleine Wauz-Kart-Wiki
 - API-Routen fuer Health-Check und Wiki-Daten
-- Windows-EXE als Release-Download: `wauzkart.exe`
+- Release-Downloads fuer Windows, Linux und macOS
 
 ## Download
 
-Die Windows-Version soll als GitHub-Release-Asset hochgeladen werden:
+Die Versionen werden als GitHub-Release-Assets hochgeladen:
 
-`wauzkart.exe`
+- `wauzkart-windows.zip`
+- `wauzkart-linux.zip`
+- `wauzkart-macos.zip`
