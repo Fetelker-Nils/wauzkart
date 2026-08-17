@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.0
+# Wauz Kart v1.0.2
 
 Erste Website-Release fuer Wauz Kart.
 
@@ -9,12 +9,12 @@ Erste Website-Release fuer Wauz Kart.
 - Garage-Seite mit Charakteren und Autos
 - kleine Wauz-Kart-Wiki
 - API-Routen fuer Health-Check und Wiki-Daten
-- Release-Downloads fuer Windows, Linux und macOS
+- direkte Release-Downloads fuer Windows, Linux und macOS
 
 ## Download
 
 Die Versionen werden als GitHub-Release-Assets hochgeladen:
 
-- `wauzkart-windows.zip`
-- `wauzkart-linux.zip`
-- `wauzkart-macos.zip`
+- `wauzkart-windows.exe`
+- `wauzkart-linux.AppImage`
+- `wauzkart-macos.dmg`
