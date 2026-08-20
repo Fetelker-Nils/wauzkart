@@ -181,6 +181,11 @@
       "description": "AppImage ausfuehrbar machen und starten. Je nach Desktop kann Rechtsklick, Eigenschaften, Ausfuehrbar noetig sein."
     },
     {
+      "name": "Linux",
+      "kind": "DEB",
+      "description": "DEB-Installer fuer Debian, Ubuntu und Linux Mint nutzen, wenn AppImage auf dem System nicht unterstuetzt wird."
+    },
+    {
       "name": "macOS",
       "kind": "DMG",
       "description": "DMG oeffnen und die App starten. Nicht signierte Builds koennen eine Sicherheitsbestaetigung brauchen."

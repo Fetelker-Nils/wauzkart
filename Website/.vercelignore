@@ -1,0 +1,4 @@
+node_modules
+.vercel
+assets/wauzkart.exe
+dist/assets/wauzkart.exe

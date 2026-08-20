@@ -17,4 +17,4 @@ Danach ist die Website unter `http://localhost:3000` erreichbar.
 - `/wiki` - kleine Wauz-Kart-Wiki
 - `/data/wiki-data.json` - Daten fuer Charaktere, Autos, Strecken, Items und Modi
 
-Die Download-Buttons zeigen direkt auf die GitHub-Release-Dateien: Windows EXE, Linux AppImage und macOS DMG.
+Die Download-Buttons zeigen direkt auf die GitHub-Release-Dateien: Windows EXE, Linux AppImage, Linux DEB und macOS DMG.
