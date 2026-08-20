@@ -66,6 +66,17 @@ function createMiniItem(entry) {
   `;
 }
 
+function createTrackCard(track) {
+  return `
+    <article class="track-card">
+      <span>${track.type}</span>
+      <h3>${track.name}</h3>
+      <p>${track.description}</p>
+      <strong>Level ${track.unlockLevel}</strong>
+    </article>
+  `;
+}
+
 function createTrackRows(tracks) {
   return `
     <div class="track-row track-head"><span>Strecke</span><span>Typ</span><span>Level</span><span>Beschreibung</span></div>
@@ -110,6 +121,11 @@ async function loadWikiData() {
   const homeItemStrip = document.querySelector("#home-item-strip");
   if (homeItemStrip) {
     homeItemStrip.innerHTML = data.items.slice(0, 6).map(createMiniItem).join("");
+  }
+
+  const homeTrackGrid = document.querySelector("#home-track-grid");
+  if (homeTrackGrid) {
+    homeTrackGrid.innerHTML = data.tracks.map(createTrackCard).join("");
   }
 
   const modeGrid = document.querySelector("#mode-grid");
