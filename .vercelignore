@@ -3,7 +3,7 @@
 .vercel
 __pycache__
 _website_git_backup
-assets
+/assets
 build
 src
 Website/node_modules
