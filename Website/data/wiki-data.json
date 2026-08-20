@@ -168,5 +168,49 @@
       "name": "Raeuber & Bulle",
       "description": "Teamspiel mit Raeubern, Bullen, Gefaengnis und Befreiungsknopf."
     }
+  ],
+  "requirements": [
+    {
+      "name": "Windows",
+      "kind": "EXE",
+      "description": "Direkter Start ueber wauzkart-windows.exe. Wenn Windows warnt, die Datei ueber Weitere Informationen starten."
+    },
+    {
+      "name": "Linux",
+      "kind": "APP",
+      "description": "AppImage ausfuehrbar machen und starten. Je nach Desktop kann Rechtsklick, Eigenschaften, Ausfuehrbar noetig sein."
+    },
+    {
+      "name": "macOS",
+      "kind": "DMG",
+      "description": "DMG oeffnen und die App starten. Nicht signierte Builds koennen eine Sicherheitsbestaetigung brauchen."
+    },
+    {
+      "name": "Grafik",
+      "kind": "GL",
+      "description": "Wauz Kart nutzt PyQt und OpenGL. Aktuelle Grafiktreiber helfen, wenn ein schwarzes Fenster erscheint."
+    }
+  ],
+  "tips": [
+    {
+      "name": "Innenkamera",
+      "kind": "F3",
+      "description": "Die Innenperspektive fuehlt sich schneller an, ist aber bei engen Kurven schwerer zu kontrollieren."
+    },
+    {
+      "name": "Randabstand",
+      "kind": "KI",
+      "description": "Die KI haelt Abstand zur Streckenkante. Nutze die Innenlinie, aber vermeide zu harte Wandkontakte."
+    },
+    {
+      "name": "Item-Timing",
+      "kind": "IT",
+      "description": "Abknaller und Wirbler sind am staerksten, wenn der Gegner kurz vor einer Kurve ist."
+    },
+    {
+      "name": "Ghost-Fahrt",
+      "kind": "GH",
+      "description": "Nach dem Ziel faehrst du ohne Kollision weiter. Das Rennen endet erst, wenn die Nachlaufzeit vorbei ist."
+    }
   ]
 }

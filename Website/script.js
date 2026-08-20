@@ -56,6 +56,16 @@ function createInfoCard(entry) {
   `;
 }
 
+function createMiniItem(entry) {
+  return `
+    <article class="mini-item">
+      <span>${entry.kind}</span>
+      <strong>${entry.name}</strong>
+      <p>${entry.effect}</p>
+    </article>
+  `;
+}
+
 function createTrackRows(tracks) {
   return `
     <div class="track-row track-head"><span>Strecke</span><span>Typ</span><span>Level</span><span>Beschreibung</span></div>
@@ -97,6 +107,11 @@ async function loadWikiData() {
     itemGrid.innerHTML = data.items.map(createInfoCard).join("");
   }
 
+  const homeItemStrip = document.querySelector("#home-item-strip");
+  if (homeItemStrip) {
+    homeItemStrip.innerHTML = data.items.slice(0, 6).map(createMiniItem).join("");
+  }
+
   const modeGrid = document.querySelector("#mode-grid");
   if (modeGrid) {
     modeGrid.innerHTML = data.modes.map(createInfoCard).join("");
@@ -105,6 +120,16 @@ async function loadWikiData() {
   const trackTable = document.querySelector("#track-table");
   if (trackTable) {
     trackTable.innerHTML = createTrackRows(data.tracks);
+  }
+
+  const requirementGrid = document.querySelector("#requirement-grid");
+  if (requirementGrid) {
+    requirementGrid.innerHTML = data.requirements.map(createInfoCard).join("");
+  }
+
+  const tipGrid = document.querySelector("#tip-grid");
+  if (tipGrid) {
+    tipGrid.innerHTML = data.tips.map(createInfoCard).join("");
   }
 }
 

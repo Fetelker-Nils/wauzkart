@@ -313,6 +313,145 @@ article p {
   gap: 14px;
 }
 
+.step-grid,
+.mode-grid-large,
+.faq-grid,
+.item-strip {
+  display: grid;
+  gap: 14px;
+}
+
+.step-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.step-grid article,
+.mode-card,
+.faq-grid article,
+.mini-item,
+.release-panel {
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-left: 5px solid var(--gold);
+  border-radius: 8px;
+}
+
+.step-grid article {
+  min-height: 220px;
+  padding: 24px;
+}
+
+.step-number {
+  display: block;
+  margin-bottom: 22px;
+  color: var(--gold-light);
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.mode-grid-large {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mode-card {
+  min-height: 330px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  position: relative;
+  background:
+    linear-gradient(0deg, rgba(7, 10, 16, 0.98), rgba(7, 10, 16, 0.35)),
+    url("assets/background_start.webp") center / cover no-repeat;
+}
+
+.mode-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(240, 200, 75, 0.18), rgba(217, 65, 49, 0.12), rgba(45, 156, 255, 0.12));
+  pointer-events: none;
+}
+
+.mode-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.mode-card.rb-card {
+  background:
+    linear-gradient(0deg, rgba(7, 10, 16, 0.98), rgba(7, 10, 16, 0.35)),
+    url("assets/background_garage.webp") center / cover no-repeat;
+}
+
+.mode-card span,
+.mini-item span,
+.release-list span {
+  color: var(--gold-light);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.mode-card h3 {
+  font-size: 34px;
+}
+
+.mode-card a {
+  width: fit-content;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--gold);
+  color: #111;
+  border-radius: 6px;
+  font-weight: 900;
+}
+
+.item-strip {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.mini-item {
+  min-height: 190px;
+  padding: 18px;
+}
+
+.mini-item strong {
+  display: block;
+  margin: 10px 0 8px;
+  font-size: 20px;
+}
+
+.release-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 22px;
+  align-items: center;
+  padding: 30px;
+}
+
+.release-list {
+  display: grid;
+  gap: 10px;
+}
+
+.release-list span {
+  padding: 12px 14px;
+  background: rgba(240, 200, 75, 0.14);
+  border: 1px solid rgba(240, 200, 75, 0.28);
+  border-radius: 6px;
+}
+
+.faq-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.faq-grid article {
+  padding: 22px;
+}
+
 .feature-grid article {
   padding: 22px;
 }
@@ -680,10 +819,18 @@ footer {
   .feature-grid,
   .gallery-grid,
   .stat-grid,
+  .step-grid,
+  .mode-grid-large,
+  .item-strip,
+  .faq-grid,
   .portal-grid,
   .roster-grid,
   .wiki-card-grid,
   .control-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .release-panel {
     grid-template-columns: 1fr;
   }
 
