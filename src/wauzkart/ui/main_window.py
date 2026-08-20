@@ -2,6 +2,7 @@ from ..runtime import *
 from ..audio.sound import wauz_audio
 from ..data.progression import RaceLogger, badge_store, global_progression, unlock_badge
 from ..game.entities import Player
+from ..network.lan import LAN_PORT, LanClient, LanServer
 from ..paths import ASSETS_DIR, _wauz_api
 from .history import HistoryWidget
 from .menu import MenuWidget
@@ -40,6 +41,7 @@ class MainWindow(QMainWindow):
         self._badge_popup_timer = QTimer(self)
         self._badge_popup_timer.setSingleShot(True)
         self._badge_popup_timer.timeout.connect(self._badge_popup.hide)
+        self._lan_session = None
 
         self._show_menu()
 
@@ -77,14 +79,63 @@ class MainWindow(QMainWindow):
         self._badge_popup_timer.start(3500)
 
     def _show_menu(self):
+        self._stop_lan_session()
         wauz_audio.play_menu_music()
         self._clear_stack()
         menu = MenuWidget(self._start_race, on_history=self._show_history)
         self.stack.addWidget(menu); self.stack.setCurrentWidget(menu)
 
-    def _start_race(self, num_humans, diff_name, laps, map_name="Oval", car_colors=None, car_styles=None, characters=None, show_ai_views=False, teams=None, rb_rounds=None, rb_round_time=None, track_size="klein"):
+    def _stop_lan_session(self):
+        if self._lan_session is not None:
+            try:
+                self._lan_session.stop()
+            except AttributeError:
+                try:
+                    self._lan_session.close()
+                except Exception:
+                    pass
+            except Exception:
+                pass
+            self._lan_session = None
+
+    def _start_race(self, num_humans, diff_name, laps, map_name="Oval", car_colors=None, car_styles=None, characters=None, show_ai_views=False, teams=None, rb_rounds=None, rb_round_time=None, track_size="klein", network_config=None):
+        network_config = dict(network_config or {})
+        network_server = None
+        network_client = None
+        local_player_index = int(network_config.get("local_player_index", 0) or 0)
+
+        if network_config.get("mode") == "host":
+            lan_settings = {
+                "player_count": num_humans,
+                "diff_name": diff_name,
+                "laps": laps,
+                "map_name": map_name,
+                "car_colors": car_colors or [],
+                "car_styles": car_styles or [],
+                "characters": characters or [],
+                "track_size": track_size,
+            }
+            network_server = LanServer(num_humans, lan_settings, port=int(network_config.get("port", LAN_PORT)))
+            network_server.start()
+            self._lan_session = network_server
+        elif network_config.get("mode") == "client":
+            network_client = LanClient(network_config.get("host", ""), port=int(network_config.get("port", LAN_PORT)), name=network_config.get("name", "Spieler"))
+            network_client.connect()
+            self._lan_session = network_client
+            settings = network_client.settings
+            num_humans = int(settings.get("player_count") or network_client.player_count or num_humans)
+            diff_name = settings.get("diff_name", diff_name)
+            laps = int(settings.get("laps", laps) or laps)
+            map_name = settings.get("map_name", map_name)
+            car_colors = settings.get("car_colors", car_colors or [])
+            car_styles = settings.get("car_styles", car_styles or [])
+            characters = settings.get("characters", characters or [])
+            track_size = settings.get("track_size", track_size)
+            local_player_index = int(network_client.slot)
+
         wauz_audio.play_race_music()
         self._clear_stack()
+
         def finished(players, rec, frames, events):
             # Speichere das Rennen im Hintergrund, um Verzgerung zu vermeiden
             def save_in_background():
@@ -154,7 +205,7 @@ class MainWindow(QMainWindow):
                     "need": global_progression.xp_needed_for_next_level(),
                 }
             self._show_result(players, rec, frames, events, xp_gained=xp_gained, levelups=levelups, progress=progress, map_name=map_name)
-        screen = RaceScreen(num_humans, diff_name, laps, map_name, self._show_menu, finished, car_colors, car_styles, characters, show_ai_views=show_ai_views, teams=teams, rb_rounds=rb_rounds, rb_round_time=rb_round_time, track_size=track_size)
+        screen = RaceScreen(num_humans, diff_name, laps, map_name, self._show_menu, finished, car_colors, car_styles, characters, show_ai_views=show_ai_views, teams=teams, rb_rounds=rb_rounds, rb_round_time=rb_round_time, track_size=track_size, network_server=network_server, network_client=network_client, local_player_index=local_player_index)
         self.stack.addWidget(screen); self.stack.setCurrentWidget(screen)
         screen.setFocus()
 

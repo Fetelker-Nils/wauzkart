@@ -2,6 +2,7 @@ from ..runtime import *
 from ..core.rendering import _draw_kart_model, _gl_box_lit
 from ..core.tuning import STYLE_RATINGS, compute_drive_ratings
 from ..data.progression import GlobalProgression, global_progression, reset_all_progress
+from ..network.lan import LAN_PORT, discover_hosts
 from ..paths import ASSETS_DIR
 from ..tracks.maps import *
 from .dialogs import ScoreBadgesDialog, TeamSelectionDialog
@@ -78,8 +79,8 @@ def style_action_button(button, bg, hover, pressed, color="#ffffff", border="#00
             border:2px solid {border};
             border-left:8px solid #f0c84b;
             border-radius:5px;
-            padding:18px 44px;
-            font-size:17px;
+            padding:16px 24px;
+            font-size:16px;
             font-weight:bold;
         }}
         QPushButton:hover {{
@@ -88,8 +89,8 @@ def style_action_button(button, bg, hover, pressed, color="#ffffff", border="#00
         }}
         QPushButton:pressed {{
             background:{pressed};
-            padding-top:20px;
-            padding-bottom:16px;
+            padding-top:18px;
+            padding-bottom:14px;
         }}
     """)
 
@@ -1038,6 +1039,7 @@ class MenuWidget(QWidget):
         self.selected_players = 1
         self.selected_mode = "Rennen"
         self.selected_map = "Oval"
+        self.network_mode = None
         self.active_slot = 0
         self.cb_ai_view = QCheckBox()
         self.cb_ai_view.setChecked(False)
@@ -1163,6 +1165,7 @@ class MenuWidget(QWidget):
         btn = QPushButton(text)
         btn.setFont(QFont("Arial", 15, QFont.Bold))
         btn.setFixedSize(width, height)
+        btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         style_action_button(btn, "#202633", "#2f3a50", "#151b26", "#ffffff", "#52647f")
         return btn
 
@@ -1210,8 +1213,8 @@ class MenuWidget(QWidget):
         btn.setIcon(self._quick_icon(kind))
         btn.setIconSize(QSize(46, 46))
         btn.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
-        btn.setFixedSize(112, 88)
-        btn.setFont(QFont("Arial", 9, QFont.Bold))
+        btn.setFixedSize(128, 92)
+        btn.setFont(QFont("Arial", 8, QFont.Bold))
         btn.setStyleSheet("""
             QToolButton {
                 background:rgba(13, 17, 24, 185);
@@ -1260,7 +1263,7 @@ class MenuWidget(QWidget):
         screen, layout = self._screen("players")
         left = QWidget()
         left.setStyleSheet("background:transparent; border:none;")
-        left.setFixedWidth(600)
+        left.setFixedWidth(680)
         left_lay = QVBoxLayout()
         left_lay.setAlignment(Qt.AlignVCenter | Qt.AlignLeft)
         left_lay.setSpacing(16)
@@ -1325,6 +1328,21 @@ class MenuWidget(QWidget):
         left_lay.addWidget(solo_btn)
         left_lay.addWidget(multi_row)
 
+        lan_row = QWidget()
+        lan_row.setStyleSheet("background:transparent; border:none;")
+        lan_lay = QHBoxLayout()
+        lan_lay.setContentsMargins(0, 0, 0, 0)
+        lan_lay.setSpacing(10)
+        lan_lay.setAlignment(Qt.AlignLeft)
+        lan_row.setLayout(lan_lay)
+        host_btn = self._menu_button("LAN HOSTEN", 190, 62)
+        join_btn = self._menu_button("LAN BEITRETEN", 210, 62)
+        host_btn.clicked.connect(self._choose_lan_host)
+        join_btn.clicked.connect(self._join_lan_race)
+        lan_lay.addWidget(host_btn)
+        lan_lay.addWidget(join_btn)
+        left_lay.addWidget(lan_row)
+
         quick_row = QWidget()
         quick_row.setStyleSheet("background:transparent; border:none;")
         quick_lay = QHBoxLayout()
@@ -1357,6 +1375,53 @@ class MenuWidget(QWidget):
         dlg.exec_()
 
     def _style_reset_message_box(self, msg):
+        self._style_dialog(msg)
+
+    def _style_dialog(self, dlg):
+        dlg.setStyleSheet("""
+            QDialog, QMessageBox, QInputDialog {
+                background:#10141c;
+                color:#ffffff;
+            }
+            QLabel {
+                color:#ffffff;
+                background:transparent;
+                border:none;
+            }
+            QLineEdit, QSpinBox {
+                background:#f7fbff;
+                color:#111111;
+                border:2px solid #f0c84b;
+                border-radius:5px;
+                padding:8px 10px;
+                selection-background-color:#f0c84b;
+            }
+            QSpinBox::up-button, QSpinBox::down-button {
+                background:#f0c84b;
+                border:1px solid #9b6f18;
+                width:22px;
+            }
+            QPushButton {
+                background:#f0c84b;
+                color:#111111;
+                border:2px solid #fff0a3;
+                border-bottom:4px solid #9b6f18;
+                border-radius:5px;
+                padding:9px 20px;
+                min-width:96px;
+                font-weight:bold;
+            }
+            QPushButton:hover {
+                background:#ffe06a;
+            }
+            QPushButton:pressed {
+                background:#c79522;
+                padding-top:11px;
+                padding-bottom:7px;
+            }
+        """)
+
+    def _style_reset_message_box_old(self, msg):
         msg.setStyleSheet("""
             QMessageBox {
                 background:#10141c;
@@ -1682,12 +1747,87 @@ class MenuWidget(QWidget):
         return screen
 
     def _choose_players(self, n):
+        self.network_mode = None
         self.selected_players = int(n)
         self.cb_ai_view.setChecked(n == 0)
         self.active_slot = 0
         self.stack.setCurrentWidget(self.mode_screen)
 
+    def _choose_lan_host(self):
+        dlg = QInputDialog(self)
+        self._style_dialog(dlg)
+        dlg.setWindowTitle("LAN hosten")
+        dlg.setLabelText("Spieler im LAN-Rennen:")
+        dlg.setInputMode(QInputDialog.IntInput)
+        dlg.setIntRange(2, 4)
+        dlg.setIntStep(1)
+        dlg.setIntValue(2)
+        if dlg.exec_() != QDialog.Accepted:
+            return
+        players = dlg.intValue()
+        self.network_mode = "host"
+        self.selected_players = int(players)
+        self.cb_ai_view.setChecked(False)
+        self.active_slot = 0
+        self.stack.setCurrentWidget(self.mode_screen)
+
+    def _join_lan_race(self):
+        found = discover_hosts(timeout=0.8)
+        default_host = found[0].get("ip", "") if found else ""
+        if found:
+            label = found[0]
+            info = QMessageBox(self)
+            self._style_dialog(info)
+            info.setWindowTitle("LAN Host gefunden")
+            info.setText(f"Host gefunden: {label.get('ip')}:{label.get('port', LAN_PORT)}")
+            info.setInformativeText("Du kannst diese IP direkt benutzen oder eine andere IP eingeben.")
+            info.setStandardButtons(QMessageBox.Ok)
+            info.exec_()
+        ip_dlg = QInputDialog(self)
+        self._style_dialog(ip_dlg)
+        ip_dlg.setWindowTitle("LAN beitreten")
+        ip_dlg.setLabelText("Host-IP:")
+        ip_dlg.setInputMode(QInputDialog.TextInput)
+        ip_dlg.setTextValue(default_host)
+        if ip_dlg.exec_() != QDialog.Accepted:
+            return
+        host = ip_dlg.textValue()
+        if not str(host).strip():
+            return
+        try:
+            self.on_start(
+                1,
+                self.diff_combo.currentText(),
+                int(self.laps_combo.currentText()),
+                self.selected_map,
+                self.slot_colors[:1],
+                self.slot_styles[:1],
+                self.slot_characters[:1],
+                False,
+                None,
+                None,
+                None,
+                network_config={"mode": "client", "host": str(host).strip(), "port": LAN_PORT},
+            )
+        except Exception as exc:
+            msg = QMessageBox(self)
+            self._style_dialog(msg)
+            msg.setWindowTitle("LAN Verbindung")
+            msg.setText("Verbindung konnte nicht hergestellt werden.")
+            msg.setInformativeText(str(exc))
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+
     def _choose_mode(self, mode):
+        if self.network_mode == "host" and mode == "Raeuber & Bulle":
+            msg = QMessageBox(self)
+            self._style_dialog(msg)
+            msg.setWindowTitle("LAN")
+            msg.setText("LAN geht aktuell nur fuer Rennen.")
+            msg.setInformativeText("Raeuber & Bulle kommt spaeter dazu.")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+            mode = "Rennen"
         self._reload_garage_unlocks()
         self.selected_mode = mode
         if mode == "Raeuber & Bulle":
@@ -1837,4 +1977,5 @@ class MenuWidget(QWidget):
             teams,
             rb_rounds,
             rb_round_time,
+            network_config={"mode": "host", "port": LAN_PORT} if self.network_mode == "host" else None,
         )

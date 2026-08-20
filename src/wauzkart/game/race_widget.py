@@ -19,9 +19,9 @@ from ..tracks.maps import *
 # GL-Rennwidget  (untersttzt 1-4 Spieler)
 # 
 class RaceWidget(QOpenGLWidget):
-    def __init__(self, num_humans, ai_diff_name, win_laps, map_name="Oval", car_colors=None, car_styles=None, characters=None, parent=None, show_ai_views=False, teams=None, rb_rounds=None, rb_round_time=None, track_size="klein"):
+    def __init__(self, num_humans, ai_diff_name, win_laps, map_name="Oval", car_colors=None, car_styles=None, characters=None, parent=None, show_ai_views=False, teams=None, rb_rounds=None, rb_round_time=None, track_size="klein", network_server=None, network_client=None, local_player_index=0):
         super().__init__(parent)
-        self.car_colors = car_colors or []
+        self.car_colors = [tuple(c) if isinstance(c, list) else c for c in (car_colors or [])]
         self.car_styles = car_styles or []
         self.characters = characters or []
         self.setFocusPolicy(Qt.StrongFocus)
@@ -34,6 +34,16 @@ class RaceWidget(QOpenGLWidget):
         self.teams = teams or []
         self.show_ai_views = bool(show_ai_views)
         self.camera_mode = 0
+        self.network_server = network_server
+        self.network_client = network_client
+        self.local_player_index = max(0, int(local_player_index or 0))
+        self._network_input_state = {"fwd": False, "bwd": False, "left": False, "right": False}
+        self._last_network_send = 0.0
+        self._last_snapshot_send = 0.0
+        self._network_snapshot_applied = False
+        self._lan_had_remote_players = False
+        self.lan_singleplayer_message = ""
+        self.lan_singleplayer_message_until = 0.0
         self.win_laps     = win_laps
         self.map_name     = map_name
         self.track_size   = track_size if map_name != "Raeuber & Bulle" else "klein"
@@ -306,6 +316,72 @@ class RaceWidget(QOpenGLWidget):
         self.rb_last_round_winner = None
         self.rb_last_round_index = None
 
+    def close_network(self):
+        if self.network_server is not None:
+            self.network_server.stop()
+        if self.network_client is not None:
+            self.network_client.close()
+
+    def set_key_state(self, key, pressed):
+        self.keys[key] = bool(pressed)
+        if self.network_client is None:
+            return
+        canonical = {
+            "w": "fwd", "UP": "fwd", "t": "fwd", "i": "fwd",
+            "s": "bwd", "DOWN": "bwd", "g": "bwd", "k": "bwd",
+            "a": "left", "LEFT": "left", "f": "left", "j": "left",
+            "d": "right", "RIGHT": "right", "h": "right", "l": "right",
+        }.get(key)
+        if canonical:
+            self._network_input_state[canonical] = bool(pressed)
+            self.network_client.send_input(self._network_input_state)
+
+    def _apply_remote_keys_for_slot(self, slot):
+        if self.network_server is None:
+            return
+        state = self.network_server.remote_inputs_for_slot(slot)
+        if not state:
+            state = {}
+        fwd_key, bwd_key, lft_key, rgt_key = PLAYER_CONFIGS[slot]["keys"]
+        self.keys[fwd_key] = bool(state.get("fwd", False))
+        self.keys[bwd_key] = bool(state.get("bwd", False))
+        self.keys[lft_key] = bool(state.get("left", False))
+        self.keys[rgt_key] = bool(state.get("right", False))
+
+    def _network_human_view_count(self):
+        if self.network_server is not None or self.network_client is not None:
+            return 1
+        return self.num_humans
+
+    def _update_lan_connection_state(self, now):
+        if self.network_server is None:
+            return
+        connected = self.network_server.connected_player_count()
+        if connected > 1:
+            self._lan_had_remote_players = True
+        if self._lan_had_remote_players and connected <= 1 and self.network_server.player_count > 1:
+            self._switch_lan_host_to_singleplayer(now)
+
+    def _switch_lan_host_to_singleplayer(self, now):
+        old_server = self.network_server
+        self.network_server = None
+        try:
+            old_server.stop()
+        except Exception:
+            pass
+        for idx, pl in enumerate(self.players):
+            if idx == self.local_player_index:
+                pl.is_ai = False
+            else:
+                pl.is_ai = True
+        if self.local_player_index != 0 and 0 <= self.local_player_index < len(self.players):
+            self.players[0], self.players[self.local_player_index] = self.players[self.local_player_index], self.players[0]
+            self.local_player_index = 0
+        self.num_humans = 1
+        self.show_ai_views = False
+        self.lan_singleplayer_message = "Spieler ist raus. Einzelspieler startet."
+        self.lan_singleplayer_message_until = now + 4.0
+
     def _prepare_obstacles(self, obstacles):
         """Move obstacles onto the track and away from the start line / grid."""
         if not obstacles:
@@ -458,6 +534,134 @@ class RaceWidget(QOpenGLWidget):
                 pl.rocket_boost = True
                 pl.boost_amount = max(pl.boost_amount, e)
 
+    def _make_network_snapshot(self, now):
+        world = self._capture_replay_world(now)
+        return {
+            "time": now,
+            "frame": self.frame_idx,
+            "phase": self.countdown_phase,
+            "phase_timer": self.phase_timer,
+            "race_over": self.race_over,
+            "winner": self.winner,
+            "finish_counter": self.finish_counter,
+            "game_timer": self.game_timer,
+            "players": [self._player_to_snapshot(pl) for pl in self.players],
+            "world": world,
+        }
+
+    def _player_to_snapshot(self, pl):
+        return {
+            "pos": [float(pl.pos[0]), float(pl.pos[1]), float(pl.pos[2])],
+            "rot": float(pl.rot),
+            "velocity": float(pl.velocity),
+            "laps": int(pl.laps),
+            "sector": int(pl.sector),
+            "finished": bool(pl.finished),
+            "finish_place": pl.finish_place,
+            "crash_timer": float(pl.crash_timer),
+            "speed_boost_timer": float(pl.speed_boost_timer),
+            "speed_boost_active": bool(pl.speed_boost_active),
+            "pending_item": pl.pending_item,
+            "pending_item_execute_time": float(pl.pending_item_execute_time),
+            "item_roulette_start_time": float(pl.item_roulette_start_time),
+            "item_roulette_end_time": float(pl.item_roulette_end_time),
+            "item_roulette_show_until": float(pl.item_roulette_show_until),
+            "item_roulette_result": pl.item_roulette_result,
+            "incoming_attack_type": pl.incoming_attack_type,
+            "incoming_attack_from": pl.incoming_attack_from,
+            "incoming_attack_execute_time": float(pl.incoming_attack_execute_time),
+            "incoming_attack_until": float(pl.incoming_attack_until),
+            "hit_spin_axis": pl.hit_spin_axis,
+            "hit_spin_start": float(pl.hit_spin_start),
+            "hit_spin_until": float(pl.hit_spin_until),
+            "hit_spin_degrees": float(pl.hit_spin_degrees),
+            "hit_pop_height": float(pl.hit_pop_height),
+            "rb_caught": bool(getattr(pl, "rb_caught", False)),
+            "rb_color_team": getattr(pl, "rb_color_team", None),
+            "team": getattr(pl, "team", None),
+        }
+
+    def _apply_network_snapshot(self, snapshot):
+        if not snapshot:
+            return
+        self.countdown_phase = snapshot.get("phase", self.countdown_phase)
+        self.phase_timer = float(snapshot.get("phase_timer", self.phase_timer))
+        self.race_over = bool(snapshot.get("race_over", self.race_over))
+        self.winner = snapshot.get("winner", self.winner)
+        self.finish_counter = int(snapshot.get("finish_counter", self.finish_counter) or 0)
+        self.game_timer = snapshot.get("game_timer", self.game_timer)
+        for idx, data in enumerate(snapshot.get("players", [])):
+            if idx >= len(self.players):
+                break
+            self._apply_player_snapshot(self.players[idx], data)
+        self._apply_network_world(snapshot.get("world") or {})
+        self._network_snapshot_applied = True
+
+    def _apply_player_snapshot(self, pl, data):
+        pos = data.get("pos") or pl.pos
+        if len(pos) >= 3:
+            pl.pos[0] = float(pos[0])
+            pl.pos[1] = float(pos[1])
+            pl.pos[2] = float(pos[2])
+        pl.rot = float(data.get("rot", pl.rot))
+        pl.velocity = float(data.get("velocity", pl.velocity))
+        pl.laps = int(data.get("laps", pl.laps) or 0)
+        pl.sector = int(data.get("sector", pl.sector) or 0)
+        pl.finished = bool(data.get("finished", pl.finished))
+        pl.finish_place = data.get("finish_place", pl.finish_place)
+        pl.crash_timer = float(data.get("crash_timer", pl.crash_timer))
+        pl.speed_boost_timer = float(data.get("speed_boost_timer", pl.speed_boost_timer))
+        pl.speed_boost_active = bool(data.get("speed_boost_active", pl.speed_boost_active))
+        pl.pending_item = data.get("pending_item", pl.pending_item)
+        pl.pending_item_execute_time = float(data.get("pending_item_execute_time", pl.pending_item_execute_time))
+        pl.item_roulette_start_time = float(data.get("item_roulette_start_time", pl.item_roulette_start_time))
+        pl.item_roulette_end_time = float(data.get("item_roulette_end_time", pl.item_roulette_end_time))
+        pl.item_roulette_show_until = float(data.get("item_roulette_show_until", pl.item_roulette_show_until))
+        pl.item_roulette_result = data.get("item_roulette_result", pl.item_roulette_result)
+        pl.incoming_attack_type = data.get("incoming_attack_type", pl.incoming_attack_type)
+        pl.incoming_attack_from = data.get("incoming_attack_from", pl.incoming_attack_from)
+        pl.incoming_attack_execute_time = float(data.get("incoming_attack_execute_time", pl.incoming_attack_execute_time))
+        pl.incoming_attack_until = float(data.get("incoming_attack_until", pl.incoming_attack_until))
+        pl.hit_spin_axis = data.get("hit_spin_axis", pl.hit_spin_axis)
+        pl.hit_spin_start = float(data.get("hit_spin_start", pl.hit_spin_start))
+        pl.hit_spin_until = float(data.get("hit_spin_until", pl.hit_spin_until))
+        pl.hit_spin_degrees = float(data.get("hit_spin_degrees", pl.hit_spin_degrees))
+        pl.hit_pop_height = float(data.get("hit_pop_height", pl.hit_pop_height))
+        pl.rb_caught = bool(data.get("rb_caught", getattr(pl, "rb_caught", False)))
+        pl.rb_color_team = data.get("rb_color_team", getattr(pl, "rb_color_team", None))
+        pl.team = data.get("team", getattr(pl, "team", None))
+
+    def _apply_network_world(self, world):
+        now = time.time()
+        powerups = list(world.get("powerups") or [])
+        while len(self.items) < len(powerups):
+            self.items.append(SpeedBoostItem(x=0.0, z=0.0, lifetime=3.0))
+        self.items = self.items[:len(powerups)]
+        for item, raw in zip(self.items, powerups):
+            if len(raw) >= 3:
+                item.pos = [float(raw[0]), float(raw[1]), float(raw[2])]
+                item.collected = False
+                item.despawn_time = now + 3.0
+
+        boxes = list(world.get("boxes") or [])
+        while len(self.item_boxes) < len(boxes):
+            self.item_boxes.append(ItemBox(0.0, 0.0, respawn_interval=3.5))
+        self.item_boxes = self.item_boxes[:len(boxes)]
+        for box, raw in zip(self.item_boxes, boxes):
+            if len(raw) >= 4:
+                box.pos = [float(raw[0]), float(raw[1]), float(raw[2])]
+                box.next_available_time = 0.0 if bool(raw[3]) else now + 1.0
+
+        self.oil_slicks = []
+        for raw in world.get("oil") or []:
+            if len(raw) >= 4:
+                self.oil_slicks.append({
+                    "x": float(raw[0]),
+                    "z": float(raw[1]),
+                    "created": now - float(raw[2]),
+                    "expires": now + float(raw[3]),
+                })
+
     #  GL 
     def initializeGL(self):
         glEnable(GL_DEPTH_TEST); glEnable(GL_BLEND)
@@ -474,7 +678,19 @@ class RaceWidget(QOpenGLWidget):
         self.last_time = now
         self.frame_idx += 1
 
-        self.update_countdown()
+        simulate_this_frame = self.network_client is None
+        self._update_lan_connection_state(now)
+        if self.network_client is not None:
+            if now - self._last_network_send > 0.033:
+                self.network_client.send_input(self._network_input_state)
+                self._last_network_send = now
+            self._apply_network_snapshot(self.network_client.latest_snapshot())
+        else:
+            if self.network_server is not None and self.network_server.connected_player_count() < self.network_server.player_count:
+                self.countdown_phase = "idle"
+                self.phase_timer = now
+            else:
+                self.update_countdown()
 
         if self.map_name == "Raeuber & Bulle" and self.rb_between_rounds:
             # Draw current state, but freeze gameplay logic until user continues.
@@ -483,16 +699,18 @@ class RaceWidget(QOpenGLWidget):
                 self._draw_car(pl)
             return
 
-        if self.is_racing() and not self.race_over:
+        if simulate_this_frame and self.is_racing() and not self.race_over:
             # Timer fuer Raeuber & Bulle
             if self.game_timer is not None:
                 self.game_timer -= dt
                 if self.game_timer <= 0:
                     self._end_race_raeuber_win()
 
-        if self.is_racing() and not self.race_over:
+        if simulate_this_frame and self.is_racing() and not self.race_over:
             # Menschliche Spieler updaten
             for i in range(self.num_humans):
+                if self.network_server is not None and i != self.local_player_index:
+                    self._apply_remote_keys_for_slot(i)
                 keys_cfg = PLAYER_CONFIGS[i]["keys"]  # (fwd, bwd, left, right)
                 self._update_player(self.players[i], dt, *keys_cfg)
 
@@ -656,6 +874,9 @@ class RaceWidget(QOpenGLWidget):
             # berholung-Erkennung
             self._check_overtakes()
             self._update_human_finish_overtime(now)
+            if self.network_server is not None and now - self._last_snapshot_send > 0.033:
+                self.network_server.broadcast_snapshot(self._make_network_snapshot(now))
+                self._last_snapshot_send = now
         elif self.race_over and getattr(self, "result_live_preview", False):
             for pl in self.players:
                 if pl.finished:
@@ -668,6 +889,10 @@ class RaceWidget(QOpenGLWidget):
                 for p in pl.particles[:]:
                     p.update(dt)
                     if p.life<=0: pl.particles.remove(p)
+
+        if self.network_server is not None and now - self._last_snapshot_send > 0.1:
+            self.network_server.broadcast_snapshot(self._make_network_snapshot(now))
+            self._last_snapshot_send = now
 
         self.recorder.record(self.players, self.frame_idx, self._capture_replay_world(now))
 
@@ -690,17 +915,18 @@ class RaceWidget(QOpenGLWidget):
                 glViewport(vx, vy, vw, vh)
                 self._draw_viewport(self.players[pidx], vw, vh)
         else:
-            if self.num_humans <= 1:
+            view_count = self._network_human_view_count()
+            if view_count <= 1:
                 glViewport(0, 0, w, h)
                 pidx = view_idxs[0] if view_idxs else 0
                 self._draw_viewport(self.players[pidx], w, h)
-            elif self.num_humans == 2:
+            elif view_count == 2:
                 half_w = w // 2
                 glViewport(0, 0, half_w, h)
                 self._draw_viewport(self.players[view_idxs[0]], half_w, h)
                 glViewport(half_w, 0, half_w, h)
                 self._draw_viewport(self.players[view_idxs[1]], half_w, h)
-            elif self.num_humans == 3:
+            elif view_count == 3:
                 half_w = w // 2
                 half_h = h // 2
                 glViewport(0, half_h, half_w, half_h)
@@ -2493,7 +2719,7 @@ class RaceWidget(QOpenGLWidget):
     def _human_viewport_rects(self, w, h):
         """Qt-Rects (top-left origin) for each viewport area."""
         rects = []
-        num_views = 4 if self.show_ai_views else self.num_humans
+        num_views = 4 if self.show_ai_views else self._network_human_view_count()
         if num_views <= 1:
             rects.append((0, 0, w, h))
         elif num_views == 2:
@@ -2517,6 +2743,8 @@ class RaceWidget(QOpenGLWidget):
 
     def _view_player_indices(self):
         """Which player index is shown in each viewport slot (0..num_views-1)."""
+        if self.network_server is not None or self.network_client is not None:
+            return [min(self.local_player_index, max(0, len(self.players) - 1))]
         if self.show_ai_views:
             idxs = []
             # humans first

@@ -8,8 +8,66 @@ from .results import ResultWidget
 # 
 # Renn-Screen  (HUD fuer 14 Spieler)
 # 
+class LanWaitOverlay(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.title = ""
+        self.subtitle = ""
+        self.ready = False
+        self.angle = 0
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.hide()
+
+    def set_status(self, title, subtitle="", ready=False):
+        self.title = title
+        self.subtitle = subtitle
+        self.ready = bool(ready)
+        self.angle = (self.angle + 18) % 360
+        self.update()
+
+    def paintEvent(self, event):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing, True)
+        rect = self.rect()
+        panel_w = min(520, max(300, rect.width() - 80))
+        panel_h = 210
+        x = (rect.width() - panel_w) // 2
+        y = (rect.height() - panel_h) // 2
+
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor(5, 8, 14, 205))
+        p.drawRoundedRect(x, y, panel_w, panel_h, 8, 8)
+        p.setPen(QPen(QColor(240, 200, 75, 230), 3))
+        p.setBrush(Qt.NoBrush)
+        p.drawRoundedRect(x + 2, y + 2, panel_w - 4, panel_h - 4, 8, 8)
+
+        cx = x + panel_w // 2
+        cy = y + 62
+        radius = 30
+        if self.ready:
+            p.setPen(QPen(QColor(80, 255, 130, 235), 7))
+            p.drawEllipse(cx - radius, cy - radius, radius * 2, radius * 2)
+            p.setPen(QPen(QColor(80, 255, 130, 255), 6))
+            p.drawLine(cx - 13, cy + 1, cx - 3, cy + 13)
+            p.drawLine(cx - 3, cy + 13, cx + 17, cy - 14)
+        else:
+            p.setPen(QPen(QColor(240, 200, 75, 80), 7))
+            p.drawEllipse(cx - radius, cy - radius, radius * 2, radius * 2)
+            p.setPen(QPen(QColor(240, 200, 75, 255), 7))
+            p.drawArc(cx - radius, cy - radius, radius * 2, radius * 2, self.angle * 16, 115 * 16)
+
+        p.setPen(QColor(255, 225, 90, 255) if not self.ready else QColor(90, 255, 145, 255))
+        p.setFont(QFont("Arial", 25, QFont.Bold))
+        p.drawText(x + 24, y + 104, panel_w - 48, 44, Qt.AlignCenter, self.title)
+
+        p.setPen(QColor(230, 238, 248, 235))
+        p.setFont(QFont("Arial", 12, QFont.Bold))
+        p.drawText(x + 28, y + 150, panel_w - 56, 32, Qt.AlignCenter, self.subtitle)
+        p.end()
+
+
 class RaceScreen(QWidget):
-    def __init__(self, num_humans, ai_diff_name, laps, map_name="Oval", on_quit=None, on_finish=None, car_colors=None, car_styles=None, characters=None, show_ai_views=False, teams=None, rb_rounds=None, rb_round_time=None, track_size="klein"):
+    def __init__(self, num_humans, ai_diff_name, laps, map_name="Oval", on_quit=None, on_finish=None, car_colors=None, car_styles=None, characters=None, show_ai_views=False, teams=None, rb_rounds=None, rb_round_time=None, track_size="klein", network_server=None, network_client=None, local_player_index=0):
         super().__init__()
         self.on_quit   = on_quit
         self.on_finish = on_finish
@@ -24,6 +82,11 @@ class RaceScreen(QWidget):
         self.rb_rounds = rb_rounds
         self.rb_round_time = rb_round_time
         self.track_size = track_size if map_name != "Raeuber & Bulle" else "klein"
+        self.network_server = network_server
+        self.network_client = network_client
+        self.local_player_index = int(local_player_index or 0)
+        self._network_result_sent = False
+        self.lbl_lan_status = None
         self.result_overlay = None
         self.setStyleSheet("background:#1a1a1a;")
         lay = QHBoxLayout(); lay.setContentsMargins(0,0,0,0); self.setLayout(lay)
@@ -48,6 +111,24 @@ class RaceScreen(QWidget):
         diff_lbl = QLabel(f"KI: {ai_diff_name}")
         diff_lbl.setFont(QFont("Arial",9)); diff_lbl.setStyleSheet("color:#555;")
         hl.addWidget(diff_lbl); hl.addSpacing(8)
+        if self.network_server is not None:
+            try:
+                lan_text = f"LAN HOST\nIP: {self.network_server.host_ip}\nPort: {self.network_server.port}"
+            except Exception:
+                lan_text = "LAN HOST"
+            lan_lbl = QLabel(lan_text)
+            lan_lbl.setWordWrap(True)
+            lan_lbl.setFont(QFont("Arial", 9, QFont.Bold))
+            lan_lbl.setStyleSheet("color:#ffdd55;")
+            self.lbl_lan_status = lan_lbl
+            hl.addWidget(lan_lbl); hl.addSpacing(8)
+        elif self.network_client is not None:
+            lan_lbl = QLabel(f"LAN CLIENT\nSpieler {self.local_player_index + 1}")
+            lan_lbl.setWordWrap(True)
+            lan_lbl.setFont(QFont("Arial", 9, QFont.Bold))
+            lan_lbl.setStyleSheet("color:#7fd7ff;")
+            self.lbl_lan_status = lan_lbl
+            hl.addWidget(lan_lbl); hl.addSpacing(8)
 
         # Raeuber & Bulle: klare Rollenanzeige fuer menschliche Spieler
         self.lbl_rb_roles = QLabel("")
@@ -130,12 +211,17 @@ class RaceScreen(QWidget):
             rb_rounds=self.rb_rounds,
             rb_round_time=self.rb_round_time,
             track_size=self.track_size,
+            network_server=self.network_server,
+            network_client=self.network_client,
+            local_player_index=self.local_player_index,
         )
         self.race.on_race_over = self._race_over
         self.race.on_rb_round_over = self._rb_round_over
 
         lay.addWidget(hud_scroll)
         lay.addWidget(self.race, stretch=1)
+
+        self.lan_overlay = LanWaitOverlay(self)
 
         self.hud_t = QTimer(); self.hud_t.timeout.connect(self._update_hud); self.hud_t.start(30)
 
@@ -154,7 +240,7 @@ class RaceScreen(QWidget):
             if k == 'F3':
                 self.race.cycle_camera_mode()
                 return
-            self.race.keys[k] = True
+            self.race.set_key_state(k, True)
             self.race.register_rocket(k)
 
     def keyReleaseEvent(self, e):
@@ -165,10 +251,14 @@ class RaceScreen(QWidget):
             Qt.Key_I:'i', Qt.Key_K:'k', Qt.Key_J:'j', Qt.Key_L:'l',
         }
         if e.key() in key_map:
-            self.race.keys[key_map[e.key()]] = False
+            self.race.set_key_state(key_map[e.key()], False)
 
     def _quit(self):
         self.hud_t.stop(); self.race.timer.stop()
+        try:
+            self.race.close_network()
+        except Exception:
+            pass
         self.on_quit()
 
     def _race_over(self, players=None, recorder=None, frames=None, events=None):
@@ -209,6 +299,15 @@ class RaceScreen(QWidget):
             pass
         if self.result_overlay is not None:
             self.result_overlay.setGeometry(self.rect())
+        if hasattr(self, "lan_overlay") and self.lan_overlay is not None:
+            self._position_lan_overlay()
+
+    def _position_lan_overlay(self):
+        if not hasattr(self, "race") or not hasattr(self, "lan_overlay"):
+            return
+        geo = self.race.geometry()
+        self.lan_overlay.setGeometry(geo)
+        self.lan_overlay.raise_()
 
     def _rb_round_over(self, info):
         # Small between-round menu (RB mode)
@@ -227,6 +326,46 @@ class RaceScreen(QWidget):
 
     def _update_hud(self):
         gl = self.race; now = time.time()
+        if self.network_client is not None and gl.race_over and not self._network_result_sent:
+            self._network_result_sent = True
+            QTimer.singleShot(250, self._race_over)
+            return
+        self._position_lan_overlay()
+        overlay_title = None
+        overlay_sub = ""
+        overlay_ready = False
+        if gl.network_server is not None:
+            try:
+                connected = gl.network_server.connected_player_count()
+                total = gl.network_server.player_count
+                if self.lbl_lan_status is not None:
+                    self.lbl_lan_status.setText(f"LAN HOST\nIP: {gl.network_server.host_ip}\nPort: {gl.network_server.port}\nSpieler: {connected}/{total}")
+                if connected < total:
+                    overlay_title = "WARTET AUF SPIELER"
+                    overlay_sub = f"{connected}/{total} verbunden"
+                elif gl.countdown_phase == "idle":
+                    overlay_title = "BEREIT"
+                    overlay_sub = "Alle Spieler sind verbunden"
+                    overlay_ready = True
+            except Exception:
+                pass
+        elif self.lbl_lan_status is not None and self.network_server is not None:
+            self.lbl_lan_status.setText("EINZELSPIELER\nLAN wurde beendet")
+
+        if gl.network_client is not None and not getattr(gl, "_network_snapshot_applied", False):
+            overlay_title = "VERBINDE"
+            overlay_sub = "Warte auf Host-Daten"
+        if now < getattr(gl, "lan_singleplayer_message_until", 0.0):
+            overlay_title = "EINZELSPIELER"
+            overlay_sub = getattr(gl, "lan_singleplayer_message", "")
+            overlay_ready = True
+
+        if overlay_title:
+            self.lan_overlay.set_status(overlay_title, overlay_sub, overlay_ready)
+            self.lan_overlay.show()
+            self.lan_overlay.raise_()
+        else:
+            self.lan_overlay.hide()
         cd = gl.get_countdown_text(); self.lbl_cd.setText(cd)
         if gl.countdown_phase == 'two':   self.lbl_cd.setStyleSheet("color:#ff8800;")
         elif gl.countdown_phase == 'go':  self.lbl_cd.setStyleSheet("color:#44ff44;")

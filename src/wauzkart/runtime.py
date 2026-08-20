@@ -3,7 +3,7 @@ from pathlib import Path
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QWidget,
     QHBoxLayout, QVBoxLayout, QGridLayout, QOpenGLWidget, QPushButton, QStackedWidget,
     QComboBox, QSizePolicy, QScrollArea, QDialog, QCheckBox, QMessageBox, QSpinBox,
-    QSlider, QProgressBar, QToolButton)
+    QSlider, QProgressBar, QToolButton, QInputDialog)
 from PyQt5.QtCore import QTimer, Qt, QUrl, QSize, QPoint
 from PyQt5.QtGui import QFont, QColor, QPainter, QPen, QIcon, QPixmap, QBrush
 try:
