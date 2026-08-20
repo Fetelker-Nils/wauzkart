@@ -96,11 +96,50 @@ jobs:
           ARCH=x86_64 ./appimagetool WauzKart.AppDir wauzkart-linux.AppImage
           chmod +x wauzkart-linux.AppImage
 
+      - name: Package Linux DEB
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$GITHUB_REF_NAME" ]; then
+            VERSION="1.0.0"
+          fi
+          mkdir -p WauzKartDeb/DEBIAN
+          mkdir -p WauzKartDeb/opt/wauzkart
+          mkdir -p WauzKartDeb/usr/bin
+          mkdir -p WauzKartDeb/usr/share/applications
+          mkdir -p WauzKartDeb/usr/share/pixmaps
+          cp dist/wauzkart-linux WauzKartDeb/opt/wauzkart/wauzkart
+          chmod 755 WauzKartDeb/opt/wauzkart/wauzkart
+          cp assets/icon.png WauzKartDeb/usr/share/pixmaps/wauzkart.png
+          ln -s /opt/wauzkart/wauzkart WauzKartDeb/usr/bin/wauzkart
+          cat > WauzKartDeb/DEBIAN/control <<DEB
+          Package: wauzkart
+          Version: $VERSION
+          Section: games
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Wauz Kart
+          Depends: libgl1, libegl1, libpulse0, libpulse-mainloop-glib0, libgstreamer-plugins-base1.0-0, libxcb-cursor0, libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-randr0, libxcb-render-util0, libxcb-shape0, libxcb-xinerama0, libxcb-xfixes0, libxkbcommon-x11-0
+          Description: Wauz Kart racing game
+           Wauz Kart is a standalone kart racing game with LAN multiplayer.
+          DEB
+          cat > WauzKartDeb/usr/share/applications/wauzkart.desktop <<DESKTOP
+          [Desktop Entry]
+          Type=Application
+          Name=Wauz Kart
+          Exec=wauzkart
+          Icon=wauzkart
+          Categories=Game;
+          Terminal=false
+          DESKTOP
+          dpkg-deb --build WauzKartDeb wauzkart-linux.deb
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: wauzkart-linux
-          path: wauzkart-linux.AppImage
+          path: |
+            wauzkart-linux.AppImage
+            wauzkart-linux.deb
 
   build-macos:
     name: macOS
@@ -154,5 +193,6 @@ jobs:
           files: |
             release-assets/**/*.exe
             release-assets/**/*.AppImage
+            release-assets/**/*.deb
             release-assets/**/*.dmg
           generate_release_notes: true
