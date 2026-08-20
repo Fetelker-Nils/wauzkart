@@ -9,7 +9,11 @@
   --gold: #f0c84b;
   --gold-light: #ffe06a;
   --red: #d94131;
+  --red-hot: #ff3f2f;
   --blue: #2d9cff;
+  --cyan: #36f0ff;
+  --green: #44e071;
+  --track: #161b22;
 }
 
 * {
@@ -22,7 +26,9 @@ html {
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    linear-gradient(135deg, rgba(255, 63, 47, 0.08) 0 12%, transparent 12% 28%, rgba(54, 240, 255, 0.07) 28% 40%, transparent 40% 100%),
+    linear-gradient(180deg, #070a10 0%, #10131b 48%, #070a10 100%);
   color: var(--text);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -44,7 +50,8 @@ img {
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(7, 10, 16, 0.92) 0%, rgba(7, 10, 16, 0.56) 45%, rgba(7, 10, 16, 0.28) 100%),
+    linear-gradient(90deg, rgba(7, 10, 16, 0.92) 0%, rgba(7, 10, 16, 0.52) 45%, rgba(217, 65, 49, 0.2) 100%),
+    repeating-linear-gradient(115deg, transparent 0 26px, rgba(255, 224, 106, 0.16) 26px 30px, transparent 30px 58px),
     url("assets/background_launcher.webp") center / cover no-repeat;
 }
 
@@ -55,19 +62,22 @@ img {
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(90deg, rgba(7, 10, 16, 0.93) 0%, rgba(7, 10, 16, 0.62) 52%, rgba(7, 10, 16, 0.34) 100%),
+    linear-gradient(90deg, rgba(7, 10, 16, 0.93) 0%, rgba(7, 10, 16, 0.58) 52%, rgba(45, 156, 255, 0.2) 100%),
+    repeating-linear-gradient(115deg, transparent 0 26px, rgba(255, 224, 106, 0.15) 26px 30px, transparent 30px 58px),
     url("assets/background_start.webp") center / cover no-repeat;
 }
 
 .garage-hero {
   background:
-    linear-gradient(90deg, rgba(7, 10, 16, 0.94) 0%, rgba(7, 10, 16, 0.58) 52%, rgba(7, 10, 16, 0.28) 100%),
+    linear-gradient(90deg, rgba(7, 10, 16, 0.94) 0%, rgba(7, 10, 16, 0.56) 52%, rgba(240, 200, 75, 0.22) 100%),
+    repeating-linear-gradient(115deg, transparent 0 26px, rgba(54, 240, 255, 0.13) 26px 30px, transparent 30px 58px),
     url("assets/background_garage.webp") center / cover no-repeat;
 }
 
 .wiki-hero {
   background:
-    linear-gradient(90deg, rgba(7, 10, 16, 0.94) 0%, rgba(7, 10, 16, 0.62) 52%, rgba(7, 10, 16, 0.32) 100%),
+    linear-gradient(90deg, rgba(7, 10, 16, 0.94) 0%, rgba(7, 10, 16, 0.6) 52%, rgba(54, 240, 255, 0.18) 100%),
+    repeating-linear-gradient(115deg, transparent 0 26px, rgba(255, 63, 47, 0.13) 26px 30px, transparent 30px 58px),
     url("assets/background_start.webp") center / cover no-repeat;
 }
 
@@ -105,13 +115,17 @@ img {
   justify-content: space-between;
   gap: 16px;
   padding: 12px 14px;
-  background: rgba(6, 9, 14, 0.72);
+  background:
+    linear-gradient(90deg, rgba(6, 9, 14, 0.88), rgba(16, 21, 31, 0.78)),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 12px, transparent 12px 24px);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-left: 6px solid var(--gold);
+  border-right: 6px solid var(--red-hot);
   border-radius: 8px;
   backdrop-filter: blur(8px);
   position: relative;
   z-index: 2;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
 }
 
 .brand {
@@ -144,7 +158,8 @@ img {
 
 .nav-links a:hover {
   color: #111;
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold-light), var(--cyan));
+  box-shadow: 0 0 18px rgba(54, 240, 255, 0.32);
 }
 
 .hero-content {
@@ -178,7 +193,10 @@ h1 {
   line-height: 0.9;
   letter-spacing: 0;
   color: var(--gold-light);
-  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.55);
+  text-shadow:
+    0 5px 0 rgba(0, 0, 0, 0.55),
+    0 0 22px rgba(255, 224, 106, 0.34),
+    0 0 38px rgba(255, 63, 47, 0.22);
 }
 
 h2 {
@@ -220,6 +238,16 @@ h3 {
   border: 2px solid rgba(255, 255, 255, 0.18);
   font-weight: 900;
   text-align: center;
+  transform: skewX(-8deg);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.button > * {
+  transform: skewX(8deg);
+}
+
+.button:hover {
+  transform: skewX(-8deg) translateY(-2px);
 }
 
 .button small {
@@ -230,19 +258,21 @@ h3 {
 }
 
 .button.primary {
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold) 52%, #ff9f1a);
   color: #111;
   border-color: var(--gold-light);
-  box-shadow: 0 5px 0 #9b6f18;
+  box-shadow: 0 5px 0 #9b6f18, 0 0 24px rgba(255, 224, 106, 0.28);
 }
 
 .button.primary:hover {
-  background: var(--gold-light);
+  background: linear-gradient(135deg, #fff08f, var(--gold-light), var(--cyan));
 }
 
 .button.ghost {
-  background: rgba(10, 16, 26, 0.78);
+  background: linear-gradient(135deg, rgba(10, 16, 26, 0.88), rgba(45, 156, 255, 0.2));
   color: var(--text);
+  border-color: rgba(54, 240, 255, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(54, 240, 255, 0.08);
 }
 
 .button.disabled {
@@ -254,6 +284,18 @@ h3 {
   width: min(1180px, calc(100% - 36px));
   margin: 0 auto;
   padding: 76px 0;
+  position: relative;
+}
+
+.band::before {
+  content: "";
+  display: block;
+  width: 124px;
+  height: 8px;
+  margin-bottom: 22px;
+  background:
+    linear-gradient(90deg, var(--red-hot) 0 26%, transparent 26% 34%, var(--gold-light) 34% 60%, transparent 60% 68%, var(--cyan) 68% 100%);
+  border-radius: 999px;
 }
 
 .intro {
@@ -280,10 +322,29 @@ article p {
 
 .stat-grid div,
 .feature-grid article {
-  background: var(--panel);
+  background:
+    linear-gradient(145deg, rgba(18, 24, 36, 0.95), rgba(10, 14, 22, 0.86)),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 10px, transparent 10px 20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-left: 5px solid var(--gold);
   border-radius: 8px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+}
+
+.stat-grid div:nth-child(2),
+.feature-grid article:nth-child(2n),
+.step-grid article:nth-child(2),
+.faq-grid article:nth-child(2n),
+.wiki-card-grid article:nth-child(2n) {
+  border-left-color: var(--cyan);
+}
+
+.stat-grid div:nth-child(3),
+.feature-grid article:nth-child(3n),
+.step-grid article:nth-child(3),
+.faq-grid article:nth-child(3n),
+.wiki-card-grid article:nth-child(3n) {
+  border-left-color: var(--red-hot);
 }
 
 .stat-grid div {
@@ -330,10 +391,13 @@ article p {
 .faq-grid article,
 .mini-item,
 .release-panel {
-  background: var(--panel);
+  background:
+    linear-gradient(145deg, rgba(18, 24, 36, 0.95), rgba(10, 14, 22, 0.86)),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 10px, transparent 10px 20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-left: 5px solid var(--gold);
   border-radius: 8px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
 }
 
 .step-grid article {
@@ -348,6 +412,7 @@ article p {
   font-size: 42px;
   font-weight: 900;
   line-height: 1;
+  text-shadow: 0 0 20px rgba(255, 63, 47, 0.32);
 }
 
 .mode-grid-large {
@@ -365,6 +430,8 @@ article p {
   background:
     linear-gradient(0deg, rgba(7, 10, 16, 0.98), rgba(7, 10, 16, 0.35)),
     url("assets/background_start.webp") center / cover no-repeat;
+  border-left: 5px solid var(--red-hot);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(255, 63, 47, 0.18);
 }
 
 .mode-card::before {
@@ -384,6 +451,8 @@ article p {
   background:
     linear-gradient(0deg, rgba(7, 10, 16, 0.98), rgba(7, 10, 16, 0.35)),
     url("assets/background_garage.webp") center / cover no-repeat;
+  border-left-color: var(--cyan);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(54, 240, 255, 0.18);
 }
 
 .mode-card span,
@@ -403,10 +472,11 @@ article p {
   width: fit-content;
   margin-top: 12px;
   padding: 10px 14px;
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold-light), var(--red-hot));
   color: #111;
   border-radius: 6px;
   font-weight: 900;
+  box-shadow: 0 5px 0 rgba(0, 0, 0, 0.34);
 }
 
 .item-strip {
@@ -416,6 +486,11 @@ article p {
 .mini-item {
   min-height: 190px;
   padding: 18px;
+  border-left-color: var(--cyan);
+}
+
+.mini-item:nth-child(odd) {
+  border-left-color: var(--red-hot);
 }
 
 .mini-item strong {
@@ -462,10 +537,11 @@ article p {
   width: 46px;
   height: 46px;
   margin-bottom: 14px;
-  background: var(--gold);
+  background: linear-gradient(135deg, var(--gold-light), var(--cyan));
   color: #111;
   border-radius: 6px;
   font-weight: 900;
+  box-shadow: 0 0 20px rgba(54, 240, 255, 0.2);
 }
 
 .gallery-grid {
@@ -486,7 +562,8 @@ article p {
 
 .shot.active,
 .shot:hover {
-  border-color: var(--gold);
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 2px rgba(255, 224, 106, 0.18), 0 18px 36px rgba(0, 0, 0, 0.28);
 }
 
 .shot img {
@@ -497,9 +574,12 @@ article p {
 
 .preview {
   padding: 12px;
-  background: var(--panel-soft);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background:
+    linear-gradient(135deg, rgba(255, 63, 47, 0.2), rgba(54, 240, 255, 0.16)),
+    var(--panel-soft);
+  border: 1px solid rgba(54, 240, 255, 0.24);
   border-radius: 8px;
+  box-shadow: 0 22px 42px rgba(0, 0, 0, 0.3);
 }
 
 .preview img {
@@ -518,11 +598,14 @@ article p {
   justify-content: space-between;
   gap: 22px;
   background:
-    linear-gradient(90deg, rgba(8, 12, 20, 0.96), rgba(8, 12, 20, 0.76)),
+    linear-gradient(90deg, rgba(8, 12, 20, 0.96), rgba(8, 12, 20, 0.66)),
+    repeating-linear-gradient(115deg, rgba(255, 224, 106, 0.16) 0 12px, transparent 12px 28px, rgba(255, 63, 47, 0.16) 28px 40px, transparent 40px 58px),
     url("assets/background_start.webp") center / cover no-repeat;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-left: 7px solid var(--gold);
+  border-left: 7px solid var(--red-hot);
+  border-right: 7px solid var(--cyan);
   border-radius: 8px;
+  box-shadow: 0 24px 52px rgba(0, 0, 0, 0.34);
 }
 
 .download-actions {
@@ -567,10 +650,13 @@ article p {
 .wiki-panel,
 .wiki-card-grid article,
 .control-grid article {
-  background: var(--panel);
+  background:
+    linear-gradient(145deg, rgba(18, 24, 36, 0.95), rgba(10, 14, 22, 0.86)),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 10px, transparent 10px 20px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-left: 5px solid var(--gold);
   border-radius: 8px;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
 }
 
 .portal-link {
@@ -607,8 +693,9 @@ article p {
 }
 
 .portal-link:hover {
-  border-color: var(--gold);
+  border-color: var(--cyan);
   transform: translateY(-2px);
+  box-shadow: 0 22px 42px rgba(0, 0, 0, 0.34), 0 0 24px rgba(54, 240, 255, 0.14);
 }
 
 .roster-grid {
@@ -766,7 +853,7 @@ meter::-webkit-meter-optimum-value {
 }
 
 .track-head {
-  background: rgba(240, 200, 75, 0.16);
+  background: linear-gradient(90deg, rgba(255, 63, 47, 0.24), rgba(240, 200, 75, 0.18), rgba(54, 240, 255, 0.18));
   color: var(--gold-light);
   font-weight: 900;
 }
