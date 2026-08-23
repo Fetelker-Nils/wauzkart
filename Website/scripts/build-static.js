@@ -40,6 +40,8 @@ for (const file of [
   "wiki.html",
   "style.css",
   "script.js",
+  "robots.txt",
+  "sitemap.xml",
   "README.md",
   "RELEASE_NOTES.md"
 ]) {
