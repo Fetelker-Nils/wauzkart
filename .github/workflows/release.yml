@@ -35,9 +35,12 @@ jobs:
 
       - name: Prepare Windows installer
         run: |
-          $version = "${env:GITHUB_REF_NAME}".TrimStart("v")
-          if (-not $version -or $version -eq "${env:GITHUB_REF_NAME}") { $version = "1.0.0" }
-          makensis /DVERSION=$version scripts\windows-installer.nsi
+          $refName = $env:GITHUB_REF_NAME
+          $version = $refName.TrimStart("v")
+          if (-not $refName.StartsWith("v")) { $version = "1.0.0" }
+          $makensis = Join-Path ${env:ProgramFiles(x86)} "NSIS\makensis.exe"
+          if (-not (Test-Path $makensis)) { $makensis = "makensis" }
+          & $makensis "/DVERSION=$version" "scripts\windows-installer.nsi"
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
