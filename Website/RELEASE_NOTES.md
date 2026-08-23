@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.20
+# Wauz Kart v1.0.21
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -19,6 +19,9 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Audio ist auch unter WSL wieder standardmaessig aktiv
 - LAN-Rennen zeigen Statistiken erst, wenn alle Online-Spieler im Ziel sind
 - Versionsanzeige unten rechts im Spiel-Fenster
+- Auto-Updater mit Download-Fortschritt, Installationsstart und Neustart
+- Windows-Installer mit detailliertem Fortschrittsfenster
+- Linux-Installer mit Prozent-Ausgaben und Restart-Modus
 - Linux DEB-Installer fuer Systeme ohne AppImage-Support
 - Linux-Build fix fuer PyOpenGL Platform-Module wie `OpenGL.platform.egl`
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect

@@ -1,4 +1,8 @@
 from ..runtime import *
+import platform
+import shutil
+import subprocess
+import tempfile
 import urllib.request
 from .. import __version__
 from ..audio.sound import wauz_audio
@@ -16,6 +20,64 @@ from .results import ResultWidget
 
 class _UpdateSignal(QObject):
     found = pyqtSignal(dict)
+    progress = pyqtSignal(int, str)
+    failed = pyqtSignal(str)
+    install = pyqtSignal(str)
+
+
+class UpdateProgressDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Wauz Kart Update")
+        self.setModal(True)
+        self.setFixedSize(520, 220)
+        self.setStyleSheet("""
+            QDialog {
+                background: #070b13;
+                color: #ffffff;
+            }
+            QLabel {
+                color: #ffffff;
+            }
+            QProgressBar {
+                background: #101927;
+                color: #ffffff;
+                border: 2px solid #f4c945;
+                border-radius: 8px;
+                height: 28px;
+                text-align: center;
+                font-weight: bold;
+            }
+            QProgressBar::chunk {
+                background: #f4c945;
+                border-radius: 6px;
+            }
+        """)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(12)
+        self.setLayout(layout)
+
+        self.title = QLabel("Update wird installiert")
+        self.title.setFont(QFont("Arial", 20, QFont.Bold))
+        self.title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.title)
+
+        self.detail = QLabel("Bereite Update vor...")
+        self.detail.setWordWrap(True)
+        self.detail.setFont(QFont("Arial", 11, QFont.Bold))
+        self.detail.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.detail)
+
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        self.progress.setFormat("%p%")
+        layout.addWidget(self.progress)
+
+    def set_progress(self, percent, text):
+        self.progress.setValue(max(0, min(100, int(percent))))
+        self.detail.setText(str(text or ""))
 
 
 # 
@@ -64,8 +126,12 @@ class MainWindow(QMainWindow):
         self._badge_popup_timer.setSingleShot(True)
         self._badge_popup_timer.timeout.connect(self._badge_popup.hide)
         self._lan_session = None
+        self._update_dialog = None
         self._update_signal = _UpdateSignal(self)
         self._update_signal.found.connect(self._show_update_dialog)
+        self._update_signal.progress.connect(self._set_update_progress)
+        self._update_signal.failed.connect(self._show_update_failed)
+        self._update_signal.install.connect(self._start_update_installer)
 
         self._show_menu()
         self._position_version_label()
@@ -146,80 +212,120 @@ class MainWindow(QMainWindow):
         asset = update.get("asset", "") or "GitHub Release"
         url = update.get("url") or update.get("release_url")
 
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Update verfuegbar")
-        msg.setIcon(QMessageBox.Information)
-        msg.setText(f"Wauz Kart {latest} ist verfuegbar.")
-        msg.setInformativeText(
-            f"Installierte Version: {current}\n"
-            f"Update-Datei: {asset}\n\n"
-            "Der Installer laedt die neueste Version und ersetzt die alte Installation."
-        )
-        msg.setStandardButtons(QMessageBox.Open | QMessageBox.Ignore)
-        msg.setDefaultButton(QMessageBox.Open)
-        msg.button(QMessageBox.Open).setText("Update herunterladen")
-        msg.button(QMessageBox.Ignore).setText("Spaeter")
-        msg.setStyleSheet("""
-            QMessageBox {
-                background: #0b111d;
-                color: #ffffff;
-            }
-            QMessageBox QLabel {
-                color: #ffffff;
-                font-size: 13px;
-            }
-            QMessageBox QPushButton {
-                background: #f4c945;
-                color: #101010;
-                border: 2px solid #ffe37a;
-                border-radius: 6px;
-                padding: 8px 16px;
-                min-width: 130px;
-                font-weight: bold;
-            }
-            QMessageBox QPushButton:hover {
-                background: #ffe37a;
-            }
-        """)
-        if msg.exec_() == QMessageBox.Open and url:
-            if str(asset).endswith(".sh"):
-                self._download_linux_update(update)
-            else:
-                QDesktopServices.openUrl(QUrl(url))
+        if not url or not asset:
+            return
 
-    def _download_linux_update(self, update):
+        self._update_dialog = UpdateProgressDialog(self)
+        self._update_dialog.set_progress(
+            0,
+            f"Neue Version {latest} gefunden. Installiert ist {current}. Lade {asset} herunter...",
+        )
+        self._update_dialog.show()
+
+        def run_update():
+            try:
+                target = self._download_update_file(update)
+            except Exception as exc:
+                self._update_signal.failed.emit(str(exc) or "Unbekannter Download-Fehler.")
+                return
+            self._update_signal.install.emit(str(target))
+
+        threading.Thread(target=run_update, daemon=True).start()
+
+    def _download_update_file(self, update):
         url = update.get("url") or update.get("release_url")
-        asset = update.get("asset") or "install-wauzkart-linux.sh"
-        target_dir = Path.home() / "Downloads"
+        asset = update.get("asset") or "wauzkart-update"
+        target_dir = Path(tempfile.gettempdir()) / "WauzKartUpdate"
         target_dir.mkdir(parents=True, exist_ok=True)
         target = target_dir / asset
-        try:
-            urllib.request.urlretrieve(url, target)
+        if target.exists():
+            try:
+                target.unlink()
+            except Exception:
+                pass
+
+        request = urllib.request.Request(
+            url,
+            headers={"User-Agent": "WauzKart-AutoUpdater"},
+        )
+        with urllib.request.urlopen(request, timeout=30) as response:
+            total = int(response.headers.get("Content-Length") or 0)
+            done = 0
+            with open(target, "wb") as out:
+                while True:
+                    chunk = response.read(1024 * 256)
+                    if not chunk:
+                        break
+                    out.write(chunk)
+                    done += len(chunk)
+                    if total > 0:
+                        percent = int((done / total) * 95)
+                    else:
+                        percent = min(95, int(done / (1024 * 1024)))
+                    self._update_signal.progress.emit(percent, f"Lade Update herunter... {percent}%")
+        if str(target).endswith(".sh"):
             try:
                 target.chmod(0o755)
             except Exception:
                 pass
-        except Exception as exc:
-            msg = QMessageBox(self)
-            msg.setWindowTitle("Update")
-            msg.setIcon(QMessageBox.Warning)
-            msg.setText("Update konnte nicht heruntergeladen werden.")
-            msg.setInformativeText(str(exc) or "Unbekannter Download-Fehler.")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
-            return
+        self._update_signal.progress.emit(100, "Download fertig. Starte Installation...")
+        return target
 
+    def _set_update_progress(self, percent, text):
+        if self._update_dialog is not None:
+            self._update_dialog.set_progress(percent, text)
+
+    def _show_update_failed(self, text):
+        if self._update_dialog is not None:
+            self._update_dialog.close()
+            self._update_dialog = None
         msg = QMessageBox(self)
-        msg.setWindowTitle("Update bereit")
-        msg.setIcon(QMessageBox.Information)
-        msg.setText("Linux-Installer wurde heruntergeladen.")
-        msg.setInformativeText(
-            f"Datei: {target}\n\n"
-            "Schliesse Wauz Kart und fuehre dann aus:\n"
-            f"{target}"
-        )
+        msg.setWindowTitle("Update")
+        msg.setIcon(QMessageBox.Warning)
+        msg.setText("Update konnte nicht installiert werden.")
+        msg.setInformativeText(str(text or "Unbekannter Fehler."))
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
+
+    def _start_update_installer(self, target_text):
+        target = Path(target_text)
+        try:
+            self._set_update_progress(100, "Installation startet. Wauz Kart wird danach neu gestartet...")
+            should_quit = self._run_update_installer(target)
+            if should_quit:
+                QTimer.singleShot(500, QApplication.quit)
+            elif self._update_dialog is not None:
+                self._update_dialog.set_progress(100, "Update-Datei wurde geoeffnet. Folge dem Installer-Fenster.")
+        except Exception as exc:
+            self._show_update_failed(str(exc))
+
+    def _run_update_installer(self, target):
+        system = platform.system().lower()
+        pid = str(os.getpid())
+        if system == "windows":
+            flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+            subprocess.Popen(
+                [str(target), "--auto-update", "--restart", "--wait-pid", pid],
+                cwd=str(target.parent),
+                creationflags=flags,
+            )
+            return True
+        if system == "linux":
+            args = [str(target), "--auto-update", "--restart", "--wait-pid", pid]
+            if shutil.which("pkexec"):
+                subprocess.Popen(["pkexec", "env", "DISPLAY=" + os.environ.get("DISPLAY", ""), "XAUTHORITY=" + os.environ.get("XAUTHORITY", ""), *args], cwd=str(target.parent))
+                return True
+            terminal = shutil.which("x-terminal-emulator") or shutil.which("gnome-terminal") or shutil.which("konsole") or shutil.which("xterm")
+            if terminal:
+                subprocess.Popen([terminal, "-e", *args], cwd=str(target.parent))
+                return True
+            subprocess.Popen(args, cwd=str(target.parent))
+            return True
+        if system == "darwin":
+            subprocess.Popen(["open", str(target)], cwd=str(target.parent))
+            return False
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
+        return False
 
     def _stop_lan_session(self):
         if self._lan_session is not None:
