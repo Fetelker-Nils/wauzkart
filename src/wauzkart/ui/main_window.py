@@ -1,5 +1,6 @@
 from ..runtime import *
 import urllib.request
+from .. import __version__
 from ..audio.sound import wauz_audio
 from ..core.updates import check_for_update
 from ..data.progression import RaceLogger, badge_store, global_progression, unlock_badge
@@ -30,6 +31,20 @@ class MainWindow(QMainWindow):
         self.setGeometry(100,100,1400,800)
         self.stack = QStackedWidget(); self.setCentralWidget(self.stack)
 
+        self._version_label = QLabel(f"v{__version__}", self)
+        self._version_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self._version_label.setStyleSheet("""
+            QLabel {
+                background: rgba(8, 12, 18, 180);
+                color: #ffffff;
+                border: 1px solid rgba(255, 204, 0, 170);
+                border-radius: 6px;
+                padding: 4px 8px;
+            }
+        """)
+        self._version_label.setFont(QFont("Arial", 9, QFont.Bold))
+        self._version_label.show()
+
         # Badge popup (bottom-right)
         self._badge_popup = QLabel("", self)
         self._badge_popup.setWordWrap(True)
@@ -53,6 +68,7 @@ class MainWindow(QMainWindow):
         self._update_signal.found.connect(self._show_update_dialog)
 
         self._show_menu()
+        self._position_version_label()
         QTimer.singleShot(1200, self._check_for_updates)
 
     def resizeEvent(self, event):
@@ -60,7 +76,20 @@ class MainWindow(QMainWindow):
             super().resizeEvent(event)
         except Exception:
             pass
+        self._position_version_label()
         self._position_badge_popup()
+
+    def _position_version_label(self):
+        if not hasattr(self, "_version_label") or self._version_label is None:
+            return
+        try:
+            self._version_label.adjustSize()
+            w = self._version_label.width()
+            h = self._version_label.height()
+            self._version_label.move(max(8, self.width() - w - 12), max(8, self.height() - h - 10))
+            self._version_label.raise_()
+        except Exception:
+            pass
 
     def _position_badge_popup(self):
         if not hasattr(self, "_badge_popup") or self._badge_popup is None:
@@ -71,10 +100,12 @@ class MainWindow(QMainWindow):
             self._badge_popup.adjustSize()
             w = self._badge_popup.width()
             h = self._badge_popup.height()
+            version_h = self._version_label.height() if hasattr(self, "_version_label") else 0
             x = max(10, self.width() - w - 22)
-            y = max(10, self.height() - h - 48)
+            y = max(10, self.height() - h - version_h - 58)
             self._badge_popup.move(x, y)
             self._badge_popup.raise_()
+            self._version_label.raise_()
         except Exception:
             pass
 
@@ -94,6 +125,7 @@ class MainWindow(QMainWindow):
         self._clear_stack()
         menu = MenuWidget(self._start_race, on_history=self._show_history)
         self.stack.addWidget(menu); self.stack.setCurrentWidget(menu)
+        self._position_version_label()
 
     def _check_for_updates(self):
         def run_check():
@@ -311,6 +343,7 @@ class MainWindow(QMainWindow):
             self._show_result(players, rec, frames, events, xp_gained=xp_gained, levelups=levelups, progress=progress, map_name=map_name)
         screen = RaceScreen(num_humans, diff_name, laps, map_name, self._show_menu, finished, car_colors, car_styles, characters, show_ai_views=show_ai_views, teams=teams, rb_rounds=rb_rounds, rb_round_time=rb_round_time, track_size=track_size, network_server=network_server, network_client=network_client, local_player_index=local_player_index)
         self.stack.addWidget(screen); self.stack.setCurrentWidget(screen)
+        self._position_version_label()
         screen.setFocus()
 
     def _show_result(self, players, recorder, frames, events, xp_gained=0, levelups=None, progress=None, map_name=None):
@@ -342,6 +375,7 @@ class MainWindow(QMainWindow):
             progress=progress,
             map_name=map_name)
         self.stack.addWidget(result); self.stack.setCurrentWidget(result)
+        self._position_version_label()
 
     def _show_replay(self, frames, events, players, recorder, xp_gained=0, levelups=None, progress=None, map_name=None):
         wauz_audio.stop()
@@ -378,6 +412,7 @@ class MainWindow(QMainWindow):
             player_names=[p.name for p in (players or [])],
         )
         self.stack.addWidget(replay); self.stack.setCurrentWidget(replay)
+        self._position_version_label()
 
     def _show_history(self):
         wauz_audio.stop()
@@ -392,6 +427,7 @@ class MainWindow(QMainWindow):
         hist = HistoryWidget(on_back=self._show_menu,
                               on_show_race=self._open_history_race)
         self.stack.addWidget(hist); self.stack.setCurrentWidget(hist)
+        self._position_version_label()
 
     def _open_history_race(self, path, data):
         wauz_audio.stop()
@@ -475,6 +511,7 @@ class MainWindow(QMainWindow):
                 on_back=self._show_history
             )
             self.stack.addWidget(result_screen); self.stack.setCurrentWidget(result_screen)
+            self._position_version_label()
             return
 
         class HistoryResultScreen(QWidget):
@@ -527,6 +564,7 @@ class MainWindow(QMainWindow):
             on_back=self._show_history
         )
         self.stack.addWidget(result_screen); self.stack.setCurrentWidget(result_screen)
+        self._position_version_label()
     
     def _show_history_replay(self, frames, events, map_name=None, player_names=None):
         wauz_audio.stop()
@@ -541,6 +579,7 @@ class MainWindow(QMainWindow):
         self._clear_stack()
         replay = ReplayScreen(frames, events, on_back=lambda: self._show_history(), map_name=map_name, player_names=player_names)
         self.stack.addWidget(replay); self.stack.setCurrentWidget(replay)
+        self._position_version_label()
 
     def _clear_stack(self):
         while self.stack.count():
