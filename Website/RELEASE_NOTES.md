@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.14
+# Wauz Kart v1.0.15
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -13,6 +13,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Linux SH-Installer als `install-wauzkart-linux.sh`
 - macOS DMG als `wauzkart-macos.dmg`
 - Update-Check beim Spielstart mit passendem Installer-Link fuer das aktuelle System
+- bessere Rennstart- und LAN-Fehlermeldungen ohne leere Null/None-Texte
 - Linux DEB-Installer fuer Systeme ohne AppImage-Support
 - Linux-Build fix fuer PyOpenGL Platform-Module wie `OpenGL.platform.egl`
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect

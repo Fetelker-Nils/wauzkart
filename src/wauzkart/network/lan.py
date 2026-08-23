@@ -57,13 +57,19 @@ class LanServer:
         self._inputs = {}
         self._lock = threading.Lock()
         self.last_error = None
+        self._startup_event = threading.Event()
 
     def start(self):
         if self.running:
             return
         self.running = True
+        self.last_error = None
+        self._startup_event.clear()
         threading.Thread(target=self._run_tcp, daemon=True).start()
         threading.Thread(target=self._run_discovery, daemon=True).start()
+        self._startup_event.wait(0.8)
+        if not self.running:
+            raise RuntimeError(self.last_error or "LAN-Server konnte nicht gestartet werden.")
 
     def stop(self):
         self.running = False
@@ -120,9 +126,11 @@ class LanServer:
             srv.listen(4)
             srv.settimeout(0.5)
             self._server_sock = srv
+            self._startup_event.set()
         except Exception as exc:
-            self.last_error = str(exc)
+            self.last_error = str(exc) or exc.__class__.__name__ or "LAN-Serverfehler."
             self.running = False
+            self._startup_event.set()
             return
 
         while self.running:
@@ -175,7 +183,7 @@ class LanServer:
                     with self._lock:
                         self._inputs[slot] = dict(msg.get("keys") or {})
         except Exception as exc:
-            self.last_error = str(exc)
+            self.last_error = str(exc) or exc.__class__.__name__ or "LAN-Clientfehler."
         finally:
             with self._lock:
                 if slot is not None:
@@ -193,7 +201,7 @@ class LanServer:
             udp.bind(("", DISCOVERY_PORT))
             udp.settimeout(0.5)
         except Exception as exc:
-            self.last_error = str(exc)
+            self.last_error = str(exc) or exc.__class__.__name__ or "LAN-Discoveryfehler."
             return
 
         while self.running:
@@ -277,7 +285,7 @@ class LanClient:
         try:
             _send_json_line(self._sock, {"type": "input", "keys": dict(keys or {})})
         except Exception as exc:
-            self.last_error = str(exc)
+            self.last_error = str(exc) or exc.__class__.__name__ or "LAN-Sendefehler."
             self.running = False
 
     def latest_snapshot(self):
@@ -291,7 +299,7 @@ class LanClient:
             except socket.timeout:
                 continue
             except Exception as exc:
-                self.last_error = str(exc)
+                self.last_error = str(exc) or exc.__class__.__name__ or "LAN-Empfangsfehler."
                 break
             if msg is None:
                 break

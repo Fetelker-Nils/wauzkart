@@ -1810,13 +1810,27 @@ class MenuWidget(QWidget):
                 network_config={"mode": "client", "host": str(host).strip(), "port": LAN_PORT},
             )
         except Exception as exc:
-            msg = QMessageBox(self)
-            self._style_dialog(msg)
-            msg.setWindowTitle("LAN Verbindung")
-            msg.setText("Verbindung konnte nicht hergestellt werden.")
-            msg.setInformativeText(str(exc))
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
+            self._show_start_error("LAN Verbindung", "Verbindung konnte nicht hergestellt werden.", exc)
+
+    def _error_text(self, exc):
+        text = str(exc or "").strip()
+        if text and text.lower() not in ("none", "null"):
+            return text
+        name = exc.__class__.__name__ if exc is not None else ""
+        if name and name not in ("Exception", "RuntimeError"):
+            return name
+        return "Bitte pruefe, ob ein LAN-Host laeuft und ob Firewall oder Netzwerk den Start blockieren."
+
+    def _show_start_error(self, title, text, exc):
+        msg = QMessageBox(self)
+        self._style_dialog(msg)
+        msg.setWindowTitle(title)
+        msg.setText(text)
+        detail = self._error_text(exc)
+        if detail:
+            msg.setInformativeText(detail)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
     def _choose_mode(self, mode):
         if self.network_mode == "host" and mode == "Raeuber & Bulle":
@@ -1965,17 +1979,21 @@ class MenuWidget(QWidget):
         car_colors = self.slot_colors[:count]
         car_styles = self.slot_styles[:count]
         characters = self.slot_characters[:count]
-        self.on_start(
-            num_humans,
-            self.diff_combo.currentText(),
-            laps,
-            map_name,
-            car_colors,
-            car_styles,
-            characters,
-            self.cb_ai_view.isChecked(),
-            teams,
-            rb_rounds,
-            rb_round_time,
-            network_config={"mode": "host", "port": LAN_PORT} if self.network_mode == "host" else None,
-        )
+        try:
+            self.on_start(
+                num_humans,
+                self.diff_combo.currentText(),
+                laps,
+                map_name,
+                car_colors,
+                car_styles,
+                characters,
+                self.cb_ai_view.isChecked(),
+                teams,
+                rb_rounds,
+                rb_round_time,
+                network_config={"mode": "host", "port": LAN_PORT} if self.network_mode == "host" else None,
+            )
+        except Exception as exc:
+            title = "LAN Verbindung" if self.network_mode == "host" else "Rennstart"
+            self._show_start_error(title, "Rennen konnte nicht gestartet werden.", exc)
