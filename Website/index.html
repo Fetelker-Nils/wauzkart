@@ -42,7 +42,7 @@
       <section class="band intro">
         <div class="intro-text">
           <h2>Rennen mit Wauz-Energie</h2>
-          <p>Wauz Kart ist ein lokales 3D-Kartspiel mit Mehrspieler-Steuerung, KI-Fahrern, Power-ups und eigenen Downloads fuer Windows, Linux und macOS.</p>
+          <p>Wauz Kart ist ein lokales 3D-Kartspiel mit Mehrspieler-Steuerung, LAN-Modus, KI-Fahrern, Power-ups und einfachen Downloads fuer Windows, Linux und macOS.</p>
         </div>
         <div class="stat-grid" aria-label="Spielinhalt">
           <div><strong>4</strong><span>Spieler</span></div>
@@ -218,14 +218,15 @@
         <div>
           <p class="eyebrow">Aktuelle Version</p>
           <h2>Direkte Installer statt Zip-Dateien</h2>
-          <p>Die Release-Seite bietet Windows EXE, Linux AppImage, Linux DEB und macOS DMG. Die Website-Bilder und Installer-Links werden nach jedem Update live geprueft.</p>
+          <p>Die Release-Seite bietet Windows EXE, Linux Auto-Installer, Linux AppImage, Linux DEB und macOS DMG. Die Website-Bilder und Installer-Links werden nach jedem Update live geprueft.</p>
         </div>
         <div class="release-list">
           <span>Windows EXE</span>
+          <span>Linux Auto-Installer</span>
           <span>Linux AppImage</span>
           <span>Linux DEB</span>
           <span>macOS DMG</span>
-          <span>GitHub Release v1.0.5</span>
+          <span>GitHub Release v1.0.6</span>
         </div>
       </section>
 
@@ -242,13 +243,18 @@
           </article>
           <article>
             <span>Linux</span>
-            <h3>AppImage ausfuehrbar machen</h3>
-            <p>Lade <code>wauzkart-linux.AppImage</code>, setze Ausfuehrbar-Rechte und starte die Datei direkt.</p>
+            <h3>Einfacher Installer</h3>
+            <p>Lade <code>install-wauzkart-linux.sh</code> herunter und starte ihn. Er holt die aktuelle DEB-Datei und installiert die benoetigten Pakete automatisch.</p>
           </article>
           <article>
             <span>Linux</span>
             <h3>DEB installieren</h3>
             <p>Lade <code>wauzkart-linux.deb</code> fuer Debian, Ubuntu oder Linux Mint, wenn dein System AppImages nicht direkt startet.</p>
+          </article>
+          <article>
+            <span>Linux</span>
+            <h3>AppImage direkt starten</h3>
+            <p>Lade <code>wauzkart-linux.AppImage</code>, setze Ausfuehrbar-Rechte und starte die Datei direkt, wenn dein Desktop AppImages unterstuetzt.</p>
           </article>
           <article>
             <span>macOS</span>
@@ -307,7 +313,7 @@
           </article>
           <article>
             <h3>Welche Datei soll ich laden?</h3>
-            <p>Windows nutzt EXE, Linux nutzt AppImage oder DEB, macOS nutzt DMG. Alle Dateien kommen aus demselben GitHub-Release.</p>
+            <p>Windows nutzt EXE, Linux nutzt Auto-Installer, DEB oder AppImage, macOS nutzt DMG. Alle Dateien kommen aus demselben GitHub-Release.</p>
           </article>
           <article>
             <h3>Wie wechseln die Kameras?</h3>
@@ -326,6 +332,10 @@
           <a class="button primary" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/wauzkart-windows.exe">
             <span>Windows</span>
             <small>wauzkart-windows.exe</small>
+          </a>
+          <a class="button primary" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/install-wauzkart-linux.sh">
+            <span>Linux Auto</span>
+            <small>install-wauzkart-linux.sh</small>
           </a>
           <a class="button ghost" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/wauzkart-linux.AppImage">
             <span>Linux AppImage</span>

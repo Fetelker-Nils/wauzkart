@@ -67,7 +67,7 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --add-data "assets:assets" wauz_kart.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --collect-submodules OpenGL --collect-data OpenGL --hidden-import OpenGL.platform.egl --hidden-import OpenGL.platform.glx --hidden-import OpenGL.platform.x11 --hidden-import OpenGL.platform.ctypesloader --add-data "assets:assets" wauz_kart.py
           chmod +x dist/wauzkart-linux
 
       - name: Package Linux AppImage
@@ -133,6 +133,11 @@ jobs:
           DESKTOP
           dpkg-deb --build WauzKartDeb wauzkart-linux.deb
 
+      - name: Prepare Linux installer script
+        run: |
+          cp scripts/install-wauzkart-linux.sh install-wauzkart-linux.sh
+          chmod +x install-wauzkart-linux.sh
+
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
@@ -140,6 +145,7 @@ jobs:
           path: |
             wauzkart-linux.AppImage
             wauzkart-linux.deb
+            install-wauzkart-linux.sh
 
   build-macos:
     name: macOS
@@ -194,5 +200,6 @@ jobs:
             release-assets/**/*.exe
             release-assets/**/*.AppImage
             release-assets/**/*.deb
+            release-assets/**/*.sh
             release-assets/**/*.dmg
           generate_release_notes: true
