@@ -173,7 +173,7 @@
     {
       "name": "Windows",
       "kind": "AUTO",
-      "description": "install-wauzkart-windows.cmd herunterladen und starten. Der Installer laedt die aktuelle EXE, installiert sie in LocalAppData und erstellt Verknuepfungen. Beim erneuten Start wird aktualisiert."
+      "description": "install-wauzkart-windows.exe herunterladen und starten. Der Installer installiert Wauz Kart in LocalAppData und erstellt Verknuepfungen."
     },
     {
       "name": "Linux",
@@ -192,8 +192,8 @@
     },
     {
       "name": "macOS",
-      "kind": "AUTO",
-      "description": "install-wauzkart-macos.sh herunterladen und starten. Der Installer laedt das aktuelle DMG, kopiert die App und ersetzt alte Versionen automatisch."
+      "kind": "DMG",
+      "description": "wauzkart-macos.dmg herunterladen, oeffnen und die App installieren. Neue Releases liefern ein neues DMG."
     },
     {
       "name": "Grafik",
@@ -208,7 +208,7 @@
     {
       "name": "Updates",
       "kind": "AUTO",
-      "description": "Wauz Kart prueft beim Start GitHub Releases. Wenn eine neue Version verfuegbar ist, wird der passende Installer fuer Windows, Linux oder macOS angeboten."
+      "description": "Wauz Kart prueft beim Start GitHub Releases. Wenn eine neue Version verfuegbar ist, wird die passende Datei fuer Windows, Linux oder macOS angeboten."
     }
   ],
   "tips": [

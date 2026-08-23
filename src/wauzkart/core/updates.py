@@ -30,9 +30,9 @@ def is_newer_version(latest, current=None):
 def installer_asset_name():
     system = platform.system().lower()
     if system == "windows":
-        return "install-wauzkart-windows.cmd"
+        return "install-wauzkart-windows.exe"
     if system == "darwin":
-        return "install-wauzkart-macos.sh"
+        return "wauzkart-macos.dmg"
     if system == "linux":
         return "install-wauzkart-linux.sh"
     return ""

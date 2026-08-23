@@ -222,12 +222,10 @@
           <p>Die Release-Seite bietet Update-Installer fuer Windows, Linux und macOS. Wenn du den Installer spaeter noch einmal startest, wird automatisch die neueste Version geladen.</p>
         </div>
         <div class="release-list">
-          <span>Windows Auto-Installer</span>
-          <span>Linux Auto-Installer</span>
-          <span>Linux AppImage</span>
-          <span>Linux DEB</span>
-          <span>macOS Auto-Installer</span>
-          <span>GitHub Release v1.0.11</span>
+          <span>Windows EXE-Installer</span>
+          <span>Linux SH-Installer</span>
+          <span>macOS DMG</span>
+          <span>GitHub Release v1.0.12</span>
         </div>
       </section>
 
@@ -240,7 +238,7 @@
           <article>
             <span>Windows</span>
             <h3>Auto-Installer starten</h3>
-            <p>Lade <code>install-wauzkart-windows.cmd</code>. Er installiert Wauz Kart nach LocalAppData, erstellt Verknuepfungen und aktualisiert beim erneuten Start automatisch.</p>
+            <p>Lade <code>install-wauzkart-windows.exe</code>. Er installiert Wauz Kart nach LocalAppData, erstellt Verknuepfungen und aktualisiert beim erneuten Start automatisch.</p>
           </article>
           <article>
             <span>Linux</span>
@@ -248,19 +246,9 @@
             <p>Lade <code>install-wauzkart-linux.sh</code> herunter und starte ihn. Er holt die aktuelle DEB-Datei und installiert die benoetigten Pakete automatisch. Danach Wauz Kart ohne sudo starten.</p>
           </article>
           <article>
-            <span>Linux</span>
-            <h3>DEB installieren</h3>
-            <p>Lade <code>wauzkart-linux.deb</code> fuer Debian, Ubuntu oder Linux Mint, wenn dein System AppImages nicht direkt startet. Installieren darf sudo nutzen, Spielen nicht.</p>
-          </article>
-          <article>
-            <span>Linux</span>
-            <h3>AppImage direkt starten</h3>
-            <p>Lade <code>wauzkart-linux.AppImage</code>, setze Ausfuehrbar-Rechte und starte die Datei direkt, wenn dein Desktop AppImages unterstuetzt.</p>
-          </article>
-          <article>
             <span>macOS</span>
-            <h3>Auto-Installer starten</h3>
-            <p>Lade <code>install-wauzkart-macos.sh</code>. Er holt das aktuelle DMG und ersetzt die installierte App automatisch.</p>
+            <h3>DMG installieren</h3>
+            <p>Lade <code>wauzkart-macos.dmg</code>. Oeffne die Datei und installiere die App. Neue Releases bringen wieder ein aktuelles DMG.</p>
           </article>
         </div>
       </section>
@@ -291,7 +279,7 @@
           <p>Die Website zeigt jetzt schon den aktuellen Stand und kann spaeter Download-Statistiken, Online-Spielinfos und neue Releases aufnehmen.</p>
         </div>
         <div class="roadmap-grid">
-          <article class="done"><span>Fertig</span><h3>Auto-Update Installer</h3><p>Windows, Linux und macOS koennen durch erneutes Starten des Installers aktualisiert werden.</p></article>
+          <article class="done"><span>Fertig</span><h3>Plattform-Installer</h3><p>Windows nutzt EXE-Installer, Linux nutzt SH-Installer und macOS nutzt DMG.</p></article>
           <article class="done"><span>Fertig</span><h3>Garage und Wiki</h3><p>Charaktere, Autos, Items, Strecken, Modi und Tipps haben eigene Seitenbereiche.</p></article>
           <article><span>Naechster Schritt</span><h3>Online-Modus Infos</h3><p>Wenn der Server steht, bekommt die Website eine eigene Online-Spielen-Seite.</p></article>
           <article><span>Spaeter</span><h3>Release-Archiv</h3><p>Neue Versionen koennen mit Changelog, Datum und Download-Hinweisen gesammelt werden.</p></article>
@@ -314,7 +302,7 @@
           </article>
           <article>
             <h3>Welche Datei soll ich laden?</h3>
-            <p>Am einfachsten sind die Auto-Installer fuer Windows, Linux und macOS. EXE, DEB, AppImage und DMG bleiben als direkte Alternativen verfuegbar.</p>
+            <p>Windows nutzt <code>install-wauzkart-windows.exe</code>, Linux nutzt <code>install-wauzkart-linux.sh</code>, macOS nutzt <code>wauzkart-macos.dmg</code>.</p>
           </article>
           <article>
             <h3>Wie merke ich neue Updates?</h3>
@@ -334,32 +322,16 @@
           <p>Lade die aktuelle Version fuer dein System herunter und fahre direkt los. Spielstaende werden lokal in Roaming gespeichert.</p>
         </div>
         <div class="download-actions" aria-label="Downloads">
-          <a class="button primary" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/install-wauzkart-windows.cmd">
-            <span>Windows Auto</span>
-            <small>install-wauzkart-windows.cmd</small>
+          <a class="button primary" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/install-wauzkart-windows.exe">
+            <span>Windows</span>
+            <small>install-wauzkart-windows.exe</small>
           </a>
           <a class="button primary" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/install-wauzkart-linux.sh">
-            <span>Linux Auto</span>
+            <span>Linux</span>
             <small>install-wauzkart-linux.sh</small>
           </a>
-          <a class="button ghost" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/wauzkart-linux.AppImage">
-            <span>Linux AppImage</span>
-            <small>wauzkart-linux.AppImage</small>
-          </a>
-          <a class="button ghost" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/wauzkart-linux.deb">
-            <span>Linux DEB</span>
-            <small>wauzkart-linux.deb</small>
-          </a>
-          <a class="button primary" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/install-wauzkart-macos.sh">
-            <span>macOS Auto</span>
-            <small>install-wauzkart-macos.sh</small>
-          </a>
-          <a class="button ghost" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/wauzkart-windows.exe">
-            <span>Windows EXE</span>
-            <small>wauzkart-windows.exe</small>
-          </a>
-          <a class="button ghost" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/wauzkart-macos.dmg">
-            <span>macOS DMG</span>
+          <a class="button primary" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest/download/wauzkart-macos.dmg">
+            <span>macOS</span>
             <small>wauzkart-macos.dmg</small>
           </a>
           <a class="release-link" href="https://github.com/Fetelker-Nils/wauzkart/releases/latest">Alle GitHub-Releases ansehen</a>
