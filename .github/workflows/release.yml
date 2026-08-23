@@ -52,7 +52,7 @@ jobs:
       - name: Install Linux libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl1 libegl1 libfuse2t64 libpulse0 libpulse-mainloop-glib0 libgstreamer-plugins-base1.0-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xfixes0 libxkbcommon-x11-0
+          sudo apt-get install -y libgl1 libegl1 libfuse2t64 libasound2t64 libpulse0 libpulse-mainloop-glib0 libgstreamer-plugins-base1.0-0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-pulseaudio gstreamer1.0-alsa libqt5multimedia5-plugins libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 libxcb-xinerama0 libxcb-xfixes0 libxkbcommon-x11-0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -67,7 +67,7 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --collect-submodules OpenGL --collect-data OpenGL --hidden-import OpenGL.platform.egl --hidden-import OpenGL.platform.glx --hidden-import OpenGL.platform.x11 --hidden-import OpenGL.platform.ctypesloader --add-data "assets:assets" wauz_kart.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --collect-submodules OpenGL --collect-data OpenGL --hidden-import OpenGL.platform.egl --hidden-import OpenGL.platform.glx --hidden-import OpenGL.platform.x11 --hidden-import OpenGL.platform.ctypesloader --hidden-import PyQt5.QtMultimedia --add-data "assets:assets" wauz_kart.py
           chmod +x dist/wauzkart-linux
 
       - name: Package Linux AppImage
@@ -118,7 +118,7 @@ jobs:
           Priority: optional
           Architecture: amd64
           Maintainer: Wauz Kart
-          Depends: libgl1, libegl1, libpulse0, libpulse-mainloop-glib0, libgstreamer-plugins-base1.0-0, libxcb-cursor0, libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-randr0, libxcb-render-util0, libxcb-shape0, libxcb-xinerama0, libxcb-xfixes0, libxkbcommon-x11-0
+          Depends: libgl1, libegl1, libasound2t64 | libasound2, libpulse0, libpulse-mainloop-glib0, libgstreamer-plugins-base1.0-0, gstreamer1.0-plugins-base, gstreamer1.0-plugins-good, gstreamer1.0-pulseaudio, gstreamer1.0-alsa, libqt5multimedia5-plugins, libxcb-cursor0, libxcb-icccm4, libxcb-image0, libxcb-keysyms1, libxcb-randr0, libxcb-render-util0, libxcb-shape0, libxcb-xinerama0, libxcb-xfixes0, libxkbcommon-x11-0
           Description: Wauz Kart racing game
            Wauz Kart is a standalone kart racing game with LAN multiplayer.
           DEB

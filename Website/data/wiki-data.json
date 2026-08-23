@@ -199,6 +199,11 @@
       "name": "Grafik",
       "kind": "GL",
       "description": "Wauz Kart nutzt PyQt und OpenGL. Aktuelle Grafiktreiber helfen, wenn ein schwarzes Fenster erscheint."
+    },
+    {
+      "name": "Sound",
+      "kind": "AUDIO",
+      "description": "Auf Linux installiert der DEB-Installer QtMultimedia und GStreamer-Pakete fuer Musik und WAV-Sound automatisch mit."
     }
   ],
   "tips": [
