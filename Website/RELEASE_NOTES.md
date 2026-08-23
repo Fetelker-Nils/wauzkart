@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.8
+# Wauz Kart v1.0.9
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -9,8 +9,11 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Garage-Seite mit Charakteren und Autos
 - kleine Wauz-Kart-Wiki
 - API-Routen fuer Health-Check und Wiki-Daten
-- direkte Release-Downloads fuer Windows, Linux und macOS
+- Auto-Update Installer fuer Windows, Linux und macOS
+- direkte Release-Downloads fuer Windows EXE, Linux AppImage, Linux DEB und macOS DMG
+- Windows Auto-Installer als `install-wauzkart-windows.cmd` und `install-wauzkart-windows.ps1`
 - Linux Auto-Installer als `install-wauzkart-linux.sh`
+- macOS Auto-Installer als `install-wauzkart-macos.sh`
 - Linux DEB-Installer fuer Systeme ohne AppImage-Support
 - Linux-Build fix fuer PyOpenGL Platform-Module wie `OpenGL.platform.egl`
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect
@@ -22,7 +25,10 @@ Aktuelle Website-Release fuer Wauz Kart.
 Die Versionen werden als GitHub-Release-Assets hochgeladen:
 
 - `wauzkart-windows.exe`
+- `install-wauzkart-windows.cmd`
+- `install-wauzkart-windows.ps1`
 - `install-wauzkart-linux.sh`
 - `wauzkart-linux.AppImage`
 - `wauzkart-linux.deb`
+- `install-wauzkart-macos.sh`
 - `wauzkart-macos.dmg`

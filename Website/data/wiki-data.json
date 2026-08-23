@@ -172,8 +172,8 @@
   "requirements": [
     {
       "name": "Windows",
-      "kind": "EXE",
-      "description": "Direkter Start ueber wauzkart-windows.exe. Wenn Windows warnt, die Datei ueber Weitere Informationen starten."
+      "kind": "AUTO",
+      "description": "install-wauzkart-windows.cmd herunterladen und starten. Der Installer laedt die aktuelle EXE, installiert sie in LocalAppData und erstellt Verknuepfungen. Beim erneuten Start wird aktualisiert."
     },
     {
       "name": "Linux",
@@ -192,8 +192,8 @@
     },
     {
       "name": "macOS",
-      "kind": "DMG",
-      "description": "DMG oeffnen und die App starten. Nicht signierte Builds koennen eine Sicherheitsbestaetigung brauchen."
+      "kind": "AUTO",
+      "description": "install-wauzkart-macos.sh herunterladen und starten. Der Installer laedt das aktuelle DMG, kopiert die App und ersetzt alte Versionen automatisch."
     },
     {
       "name": "Grafik",

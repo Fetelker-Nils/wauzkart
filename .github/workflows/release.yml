@@ -35,12 +35,17 @@ jobs:
       - name: Prepare Windows installer
         run: |
           Copy-Item dist\wauzkart.exe wauzkart-windows.exe
+          Copy-Item scripts\install-wauzkart-windows.cmd install-wauzkart-windows.cmd
+          Copy-Item scripts\install-wauzkart-windows.ps1 install-wauzkart-windows.ps1
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: wauzkart-windows
-          path: wauzkart-windows.exe
+          path: |
+            wauzkart-windows.exe
+            install-wauzkart-windows.cmd
+            install-wauzkart-windows.ps1
 
   build-linux:
     name: Linux
@@ -195,11 +200,18 @@ jobs:
         run: |
           hdiutil create -volname "Wauz Kart" -srcfolder dist/wauzkart-macos.app -ov -format UDZO wauzkart-macos.dmg
 
+      - name: Prepare macOS installer script
+        run: |
+          cp scripts/install-wauzkart-macos.sh install-wauzkart-macos.sh
+          chmod +x install-wauzkart-macos.sh
+
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: wauzkart-macos
-          path: wauzkart-macos.dmg
+          path: |
+            wauzkart-macos.dmg
+            install-wauzkart-macos.sh
 
   release:
     name: Publish Release
