@@ -11,11 +11,20 @@ SOUND_DIRS = [
     SOUNDS_DIR,
 ]
 
+def _is_wsl():
+    if os.environ.get("WSL_DISTRO_NAME") or os.environ.get("WSL_INTEROP"):
+        return True
+    try:
+        return "microsoft" in Path("/proc/sys/kernel/osrelease").read_text(errors="ignore").lower()
+    except Exception:
+        return False
+
 
 class WauzCartAudio:
     def __init__(self):
-        self.effect_available = QSoundEffect is not None
-        self.media_available = all([QMediaPlayer, QMediaContent, QMediaPlaylist])
+        self.disabled = _is_wsl() and os.environ.get("WAUZKART_ENABLE_WSL_AUDIO") != "1"
+        self.effect_available = (not self.disabled) and QSoundEffect is not None
+        self.media_available = (not self.disabled) and all([QMediaPlayer, QMediaContent, QMediaPlaylist])
         self.available = self.effect_available or self.media_available
         self._player = None
         self._playlist = None
@@ -52,23 +61,27 @@ class WauzCartAudio:
     def _play_music(self, names):
         if not self.available:
             return
-        self._ensure_backend()
-        p = self._find_music(names)
-        if p is None:
-            return
-        self.stop()
-        if self._effect is not None and p.suffix.lower() == ".wav":
-            self._effect.setSource(QUrl.fromLocalFile(str(p)))
-            self._effect.play()
+        try:
+            self._ensure_backend()
+            p = self._find_music(names)
+            if p is None:
+                return
+            self.stop()
+            if self._effect is not None and p.suffix.lower() == ".wav":
+                self._effect.setSource(QUrl.fromLocalFile(str(p)))
+                self._effect.play()
+                self._is_playing = True
+                return
+            if self._playlist is None or self._player is None:
+                return
+            self._playlist.clear()
+            self._playlist.addMedia(QMediaContent(QUrl.fromLocalFile(str(p))))
+            self._playlist.setCurrentIndex(0)
+            self._player.play()
             self._is_playing = True
-            return
-        if self._playlist is None or self._player is None:
-            return
-        self._playlist.clear()
-        self._playlist.addMedia(QMediaContent(QUrl.fromLocalFile(str(p))))
-        self._playlist.setCurrentIndex(0)
-        self._player.play()
-        self._is_playing = True
+        except Exception:
+            self.available = False
+            self._is_playing = False
 
     def play_race_music(self):
         self._play_music(("music_game.wav", "music_game.mp3", "music_game.ogg", "wauz_cart_music.wav"))
@@ -83,10 +96,13 @@ class WauzCartAudio:
         self._play_music(("music_highlight.wav", "music_highlight.mp3", "music_highlight.ogg"))
 
     def stop(self):
-        if self._effect is not None and self._is_playing:
-            self._effect.stop()
-        if self._player is not None and self._is_playing:
-            self._player.stop()
+        try:
+            if self._effect is not None and self._is_playing:
+                self._effect.stop()
+            if self._player is not None and self._is_playing:
+                self._player.stop()
+        except Exception:
+            pass
         self._is_playing = False
 
 

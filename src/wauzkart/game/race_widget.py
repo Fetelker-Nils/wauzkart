@@ -8,6 +8,7 @@ from ..core.rendering import (
     _gl_box,
     _gl_box_lit,
     _hud_text_color_for_rgb,
+    _set_perspective,
 )
 from ..core.tuning import _clamp, apply_drive_tuning
 from ..data.progression import unlock_badge
@@ -958,7 +959,7 @@ class RaceWidget(QOpenGLWidget):
         """Zeichnet eine Spieler-Perspektive in den aktuellen Viewport."""
         glMatrixMode(GL_PROJECTION); glLoadIdentity()
         far_clip = max(220.0, float(self.outer_r) * 4.2)
-        gluPerspective(60, vw / max(vh, 1), 0.1, far_clip)
+        _set_perspective(60, vw / max(vh, 1), 0.1, far_clip)
         glMatrixMode(GL_MODELVIEW);  glLoadIdentity()
         now = time.time()
         lift, hit_axis, hit_angle = self._hit_spin_visual(pl, now)

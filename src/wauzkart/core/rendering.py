@@ -1,6 +1,17 @@
 from ..runtime import *
 from ..tracks.maps import CHARACTER_DEFS
 
+def _set_perspective(fov_y, aspect, near, far):
+    """Set a perspective projection without relying on GLU."""
+    aspect = max(float(aspect or 1.0), 0.001)
+    near = max(float(near or 0.1), 0.001)
+    far = max(float(far or 100.0), near + 0.001)
+    top = math.tan(math.radians(float(fov_y) * 0.5)) * near
+    bottom = -top
+    right = top * aspect
+    left = -right
+    glFrustum(left, right, bottom, top, near, far)
+
 def _hud_text_color_for_rgb(rgb, default_hex):
     """Ensure HUD text stays readable on dark background (e.g. black cars)."""
     try:

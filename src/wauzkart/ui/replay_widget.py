@@ -5,6 +5,7 @@ from ..core.rendering import (
     _draw_track_decoration,
     _draw_track_ribbon,
     _gl_box_lit,
+    _set_perspective,
 )
 from ..game.highlights import HighlightRecorder
 from ..tracks.maps import *
@@ -175,7 +176,7 @@ class ReplayWidget(QOpenGLWidget):
         if not self.frames: return
         w,h = self.width(), self.height()
         glMatrixMode(GL_PROJECTION); glLoadIdentity()
-        gluPerspective(60, w/max(h,1), 0.1, 900)
+        _set_perspective(60, w/max(h,1), 0.1, 900)
         glMatrixMode(GL_MODELVIEW);  glLoadIdentity()
 
         snap = self.frames[self.idx]
