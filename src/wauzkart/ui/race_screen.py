@@ -328,7 +328,7 @@ class RaceScreen(QWidget):
         gl = self.race; now = time.time()
         if self.network_client is not None and gl.race_over and not self._network_result_sent:
             self._network_result_sent = True
-            QTimer.singleShot(250, self._race_over)
+            QTimer.singleShot(250, lambda: self._race_over(gl.players, gl.recorder, gl.recorder.frames, gl.recorder.events))
             return
         self._position_lan_overlay()
         overlay_title = None

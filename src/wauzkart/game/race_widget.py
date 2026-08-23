@@ -1992,6 +1992,9 @@ class RaceWidget(QOpenGLWidget):
             return
         if not self._all_human_racers_finished():
             return
+        if self.network_server is not None:
+            self._finish_standard_race_after_overtime()
+            return
         if self.human_finish_overtime_started_at is None:
             self.human_finish_overtime_started_at = now
             return

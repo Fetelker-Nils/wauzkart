@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.18
+# Wauz Kart v1.0.19
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -17,6 +17,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - WSL/Ubuntu-Fix: OpenGL-Projektion ohne GLU
 - WSL/Ubuntu-Fix: alle GLU-Kameraaufrufe entfernt und Linux-Updates werden direkt heruntergeladen
 - Audio ist auch unter WSL wieder standardmaessig aktiv
+- LAN-Rennen zeigen Statistiken erst, wenn alle Online-Spieler im Ziel sind
 - Linux DEB-Installer fuer Systeme ohne AppImage-Support
 - Linux-Build fix fuer PyOpenGL Platform-Module wie `OpenGL.platform.egl`
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect
