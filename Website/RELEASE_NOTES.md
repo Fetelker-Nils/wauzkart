@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.9
+# Wauz Kart v1.0.10
 
 Aktuelle Website-Release fuer Wauz Kart.
 
