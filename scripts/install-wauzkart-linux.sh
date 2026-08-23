@@ -57,3 +57,4 @@ if command -v update-desktop-database >/dev/null 2>&1; then
 fi
 
 info "Fertig. Starte Wauz Kart ueber dein App-Menue oder mit: wauzkart"
+info "Wichtig: Zum Spielen kein sudo benutzen. sudo ist nur fuer die Installation noetig."

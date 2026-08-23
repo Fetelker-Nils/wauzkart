@@ -178,7 +178,7 @@
     {
       "name": "Linux",
       "kind": "AUTO",
-      "description": "install-wauzkart-linux.sh herunterladen und starten. Der Installer laedt die aktuelle DEB-Datei und installiert sie mit apt."
+      "description": "install-wauzkart-linux.sh herunterladen und starten. Der Installer laedt die aktuelle DEB-Datei und installiert sie mit apt. Danach Wauz Kart ohne sudo starten."
     },
     {
       "name": "Linux",
@@ -203,7 +203,7 @@
     {
       "name": "Sound",
       "kind": "AUDIO",
-      "description": "Auf Linux installiert der DEB-Installer QtMultimedia und GStreamer-Pakete fuer Musik und WAV-Sound automatisch mit."
+      "description": "Auf Linux installiert der DEB-Installer QtMultimedia und GStreamer-Pakete fuer Musik und WAV-Sound automatisch mit. Das Spiel ohne sudo starten, damit PulseAudio oder PipeWire erreichbar bleibt."
     }
   ],
   "tips": [
