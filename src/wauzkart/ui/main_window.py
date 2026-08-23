@@ -1,4 +1,5 @@
 from ..runtime import *
+import urllib.request
 from ..audio.sound import wauz_audio
 from ..core.updates import check_for_update
 from ..data.progression import RaceLogger, badge_store, global_progression, unlock_badge
@@ -149,7 +150,44 @@ class MainWindow(QMainWindow):
             }
         """)
         if msg.exec_() == QMessageBox.Open and url:
-            QDesktopServices.openUrl(QUrl(url))
+            if str(asset).endswith(".sh"):
+                self._download_linux_update(update)
+            else:
+                QDesktopServices.openUrl(QUrl(url))
+
+    def _download_linux_update(self, update):
+        url = update.get("url") or update.get("release_url")
+        asset = update.get("asset") or "install-wauzkart-linux.sh"
+        target_dir = Path.home() / "Downloads"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        target = target_dir / asset
+        try:
+            urllib.request.urlretrieve(url, target)
+            try:
+                target.chmod(0o755)
+            except Exception:
+                pass
+        except Exception as exc:
+            msg = QMessageBox(self)
+            msg.setWindowTitle("Update")
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("Update konnte nicht heruntergeladen werden.")
+            msg.setInformativeText(str(exc) or "Unbekannter Download-Fehler.")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+            return
+
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Update bereit")
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Linux-Installer wurde heruntergeladen.")
+        msg.setInformativeText(
+            f"Datei: {target}\n\n"
+            "Schliesse Wauz Kart und fuehre dann aus:\n"
+            f"{target}"
+        )
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
 
     def _stop_lan_session(self):
         if self._lan_session is not None:

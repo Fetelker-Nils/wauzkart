@@ -8,6 +8,7 @@ from ..core.rendering import (
     _gl_box,
     _gl_box_lit,
     _hud_text_color_for_rgb,
+    _set_look_at,
     _set_perspective,
 )
 from ..core.tuning import _clamp, apply_drive_tuning
@@ -980,14 +981,14 @@ class RaceWidget(QOpenGLWidget):
             tx = cx + forward_x * 14.0
             ty = cy + forward_y * 14.0
             tz = cz + forward_z * 14.0
-            gluLookAt(cx, cy, cz, tx, ty, tz, up_x, up_y, up_z)
+            _set_look_at(cx, cy, cz, tx, ty, tz, up_x, up_y, up_z)
         elif mode == 2:
             height = max(36.0, float(self.outer_r) * 0.65)
-            gluLookAt(pl.pos[0], height, pl.pos[2] + 0.01, pl.pos[0], 0.0, pl.pos[2], 0, 0, -1)
+            _set_look_at(pl.pos[0], height, pl.pos[2] + 0.01, pl.pos[0], 0.0, pl.pos[2], 0, 0, -1)
         else:
             cx = pl.pos[0] - math.sin(rad) * 8
             cz = pl.pos[2] - math.cos(rad) * 8
-            gluLookAt(cx, 5, cz, pl.pos[0], 0.5, pl.pos[2], 0, 1, 0)
+            _set_look_at(cx, 5, cz, pl.pos[0], 0.5, pl.pos[2], 0, 1, 0)
         self._draw_track()
         for p in self.players: self._draw_car(p)
         for item in self.items: item.draw()

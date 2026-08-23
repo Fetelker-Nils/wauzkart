@@ -5,6 +5,7 @@ from ..core.rendering import (
     _draw_track_decoration,
     _draw_track_ribbon,
     _gl_box_lit,
+    _set_look_at,
     _set_perspective,
 )
 from ..game.highlights import HighlightRecorder
@@ -200,19 +201,19 @@ class ReplayWidget(QOpenGLWidget):
             outer0 = float(self.map_config.get("outer_base", self.outer_r or OUTER_R))
             inner0 = float(self.map_config.get("inner_base", self.inner_r or INNER_R))
             target_x = (outer0 + inner0) * 0.5
-            gluLookAt(target_x + 7.5, 3.2, -9.5, target_x, 0.9, 0.0, 0, 1, 0)
+            _set_look_at(target_x + 7.5, 3.2, -9.5, target_x, 0.9, 0.0, 0, 1, 0)
         elif self.follow_camera and cars and 0 <= camera_focus < len(cars):
             rad = math.radians(frot)
             back = max(10.0, min(18.0, self.outer_r * 0.12))
             cx = fx - math.sin(rad) * back
             cz = fz - math.cos(rad) * back
             cy = 5.8
-            gluLookAt(cx, cy, cz, fx, 1.0, fz, 0, 1, 0)
+            _set_look_at(cx, cy, cz, fx, 1.0, fz, 0, 1, 0)
         else:
             cam_r = max(65.0, self.outer_r * 0.95)
             cx = fx + math.cos(math.radians(self.cam_angle)) * cam_r
             cz = fz + math.sin(math.radians(self.cam_angle)) * cam_r
-            gluLookAt(cx, 28, cz, fx, 0, fz, 0, 1, 0)
+            _set_look_at(cx, 28, cz, fx, 0, fz, 0, 1, 0)
         self._draw_track()
         self._draw_replay_world(world)
         for car in cars:

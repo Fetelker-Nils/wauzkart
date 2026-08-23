@@ -1,5 +1,5 @@
 from ..runtime import *
-from ..core.rendering import _draw_kart_model, _gl_box_lit, _set_perspective
+from ..core.rendering import _draw_kart_model, _gl_box_lit, _set_look_at, _set_perspective
 from ..core.tuning import STYLE_RATINGS, compute_drive_ratings
 from ..data.progression import GlobalProgression, global_progression, reset_all_progress
 from ..network.lan import LAN_PORT, discover_hosts
@@ -170,7 +170,7 @@ class CarPreviewWidget(QOpenGLWidget):
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        gluLookAt(0, 2.4, 6.2, 0, 0.65, 0, 0, 1, 0)
+        _set_look_at(0, 2.4, 6.2, 0, 0.65, 0, 0, 1, 0)
 
         _gl_box_lit(-3.2, -0.08, -3.2, 3.2, 0.02, 3.2, (0.08, 0.11, 0.15))
         for z in [-2.4, -1.2, 0.0, 1.2, 2.4]:

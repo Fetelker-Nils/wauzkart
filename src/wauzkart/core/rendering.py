@@ -12,6 +12,39 @@ def _set_perspective(fov_y, aspect, near, far):
     left = -right
     glFrustum(left, right, bottom, top, near, far)
 
+def _normalize_vec3(v):
+    length = math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+    if length <= 0.000001:
+        return (0.0, 0.0, 0.0)
+    return (v[0] / length, v[1] / length, v[2] / length)
+
+def _cross_vec3(a, b):
+    return (
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    )
+
+def _set_look_at(eye_x, eye_y, eye_z, target_x, target_y, target_z, up_x, up_y, up_z):
+    """Set a camera transform without relying on GLU."""
+    forward = _normalize_vec3((target_x - eye_x, target_y - eye_y, target_z - eye_z))
+    if forward == (0.0, 0.0, 0.0):
+        forward = (0.0, 0.0, -1.0)
+    up = _normalize_vec3((up_x, up_y, up_z))
+    if up == (0.0, 0.0, 0.0):
+        up = (0.0, 1.0, 0.0)
+    side = _normalize_vec3(_cross_vec3(forward, up))
+    if side == (0.0, 0.0, 0.0):
+        side = (1.0, 0.0, 0.0)
+    up = _cross_vec3(side, forward)
+    glMultMatrixf([
+        side[0], up[0], -forward[0], 0.0,
+        side[1], up[1], -forward[1], 0.0,
+        side[2], up[2], -forward[2], 0.0,
+        0.0, 0.0, 0.0, 1.0,
+    ])
+    glTranslatef(-eye_x, -eye_y, -eye_z)
+
 def _hud_text_color_for_rgb(rgb, default_hex):
     """Ensure HUD text stays readable on dark background (e.g. black cars)."""
     try:
