@@ -204,6 +204,11 @@
       "name": "Sound",
       "kind": "AUDIO",
       "description": "Auf Linux installiert der DEB-Installer QtMultimedia und GStreamer-Pakete fuer Musik und WAV-Sound automatisch mit. Das Spiel ohne sudo starten, damit PulseAudio oder PipeWire erreichbar bleibt."
+    },
+    {
+      "name": "Updates",
+      "kind": "AUTO",
+      "description": "Wauz Kart prueft beim Start GitHub Releases. Wenn eine neue Version verfuegbar ist, wird der passende Installer fuer Windows, Linux oder macOS angeboten."
     }
   ],
   "tips": [

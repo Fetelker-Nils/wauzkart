@@ -1,5 +1,6 @@
 from ..runtime import *
 from ..audio.sound import wauz_audio
+from ..core.updates import check_for_update
 from ..data.progression import RaceLogger, badge_store, global_progression, unlock_badge
 from ..game.entities import Player
 from ..network.lan import LAN_PORT, LanClient, LanServer
@@ -9,6 +10,11 @@ from .menu import MenuWidget
 from .race_screen import RaceScreen
 from .replay_screen import ReplayScreen
 from .results import ResultWidget
+
+
+class _UpdateSignal(QObject):
+    found = pyqtSignal(dict)
+
 
 # 
 # MainWindow
@@ -42,8 +48,11 @@ class MainWindow(QMainWindow):
         self._badge_popup_timer.setSingleShot(True)
         self._badge_popup_timer.timeout.connect(self._badge_popup.hide)
         self._lan_session = None
+        self._update_signal = _UpdateSignal(self)
+        self._update_signal.found.connect(self._show_update_dialog)
 
         self._show_menu()
+        QTimer.singleShot(1200, self._check_for_updates)
 
     def resizeEvent(self, event):
         try:
@@ -84,6 +93,63 @@ class MainWindow(QMainWindow):
         self._clear_stack()
         menu = MenuWidget(self._start_race, on_history=self._show_history)
         self.stack.addWidget(menu); self.stack.setCurrentWidget(menu)
+
+    def _check_for_updates(self):
+        def run_check():
+            try:
+                update = check_for_update()
+            except Exception:
+                update = None
+            if update:
+                self._update_signal.found.emit(update)
+
+        threading.Thread(target=run_check, daemon=True).start()
+
+    def _show_update_dialog(self, update):
+        if not update:
+            return
+        latest = update.get("latest", "")
+        current = update.get("current", "")
+        asset = update.get("asset", "") or "GitHub Release"
+        url = update.get("url") or update.get("release_url")
+
+        msg = QMessageBox(self)
+        msg.setWindowTitle("Update verfuegbar")
+        msg.setIcon(QMessageBox.Information)
+        msg.setText(f"Wauz Kart {latest} ist verfuegbar.")
+        msg.setInformativeText(
+            f"Installierte Version: {current}\n"
+            f"Update-Datei: {asset}\n\n"
+            "Der Installer laedt die neueste Version und ersetzt die alte Installation."
+        )
+        msg.setStandardButtons(QMessageBox.Open | QMessageBox.Ignore)
+        msg.setDefaultButton(QMessageBox.Open)
+        msg.button(QMessageBox.Open).setText("Update herunterladen")
+        msg.button(QMessageBox.Ignore).setText("Spaeter")
+        msg.setStyleSheet("""
+            QMessageBox {
+                background: #0b111d;
+                color: #ffffff;
+            }
+            QMessageBox QLabel {
+                color: #ffffff;
+                font-size: 13px;
+            }
+            QMessageBox QPushButton {
+                background: #f4c945;
+                color: #101010;
+                border: 2px solid #ffe37a;
+                border-radius: 6px;
+                padding: 8px 16px;
+                min-width: 130px;
+                font-weight: bold;
+            }
+            QMessageBox QPushButton:hover {
+                background: #ffe37a;
+            }
+        """)
+        if msg.exec_() == QMessageBox.Open and url:
+            QDesktopServices.openUrl(QUrl(url))
 
     def _stop_lan_session(self):
         if self._lan_session is not None:
