@@ -22,7 +22,7 @@ def _is_wsl():
 
 class WauzCartAudio:
     def __init__(self):
-        self.disabled = _is_wsl() and os.environ.get("WAUZKART_ENABLE_WSL_AUDIO") != "1"
+        self.disabled = os.environ.get("WAUZKART_DISABLE_AUDIO") == "1"
         self.effect_available = (not self.disabled) and QSoundEffect is not None
         self.media_available = (not self.disabled) and all([QMediaPlayer, QMediaContent, QMediaPlaylist])
         self.available = self.effect_available or self.media_available
