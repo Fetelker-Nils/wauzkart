@@ -27,7 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
-          choco install nsis -y
 
       - name: Build Windows EXE
         run: |
@@ -35,12 +34,10 @@ jobs:
 
       - name: Prepare Windows installer
         run: |
-          $refName = $env:GITHUB_REF_NAME
-          $version = $refName.TrimStart("v")
-          if (-not $refName.StartsWith("v")) { $version = "1.0.0" }
-          $makensis = Join-Path ${env:ProgramFiles(x86)} "NSIS\makensis.exe"
-          if (-not (Test-Path $makensis)) { $makensis = "makensis" }
-          & $makensis "/DVERSION=$version" "scripts\windows-installer.nsi"
+          New-Item -ItemType Directory -Force -Path installer_payload | Out-Null
+          Copy-Item dist\wauzkart.exe installer_payload\wauzkart.exe
+          pyinstaller --noconfirm --clean --onefile --windowed --name install-wauzkart-windows --icon assets\icon.ico --add-binary "installer_payload\wauzkart.exe;." scripts\windows_installer.py
+          Copy-Item dist\install-wauzkart-windows.exe install-wauzkart-windows.exe
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
