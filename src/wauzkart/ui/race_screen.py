@@ -253,6 +253,18 @@ class RaceScreen(QWidget):
         if e.key() in key_map:
             self.race.set_key_state(key_map[e.key()], False)
 
+    def mousePressEvent(self, e):
+        if e.button() == Qt.LeftButton:
+            race_pos = self.race.mapFrom(self, e.pos())
+            if self.race.rect().contains(race_pos):
+                self.race.trigger_manual_item_at(race_pos.x(), race_pos.y())
+                self.setFocus()
+                return
+        try:
+            super().mousePressEvent(e)
+        except Exception:
+            pass
+
     def _quit(self):
         self.hud_t.stop(); self.race.timer.stop()
         try:

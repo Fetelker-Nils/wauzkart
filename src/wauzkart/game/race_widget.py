@@ -39,7 +39,9 @@ class RaceWidget(QOpenGLWidget):
         self.network_server = network_server
         self.network_client = network_client
         self.local_player_index = max(0, int(local_player_index or 0))
-        self._network_input_state = {"fwd": False, "bwd": False, "left": False, "right": False}
+        self._network_input_state = {"fwd": False, "bwd": False, "left": False, "right": False, "item_seq": 0}
+        self._network_item_seq = 0
+        self._remote_item_seq_seen = {}
         self._last_network_send = 0.0
         self._last_snapshot_send = 0.0
         self._network_snapshot_applied = False
@@ -338,6 +340,70 @@ class RaceWidget(QOpenGLWidget):
         if canonical:
             self._network_input_state[canonical] = bool(pressed)
             self.network_client.send_input(self._network_input_state)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.trigger_manual_item_at(event.x(), event.y())
+            try:
+                self.setFocus()
+            except Exception:
+                pass
+            return
+        try:
+            super().mousePressEvent(event)
+        except Exception:
+            pass
+
+    def trigger_manual_item_at(self, x=None, y=None):
+        if self.network_client is not None:
+            self._network_item_seq += 1
+            self._network_input_state["item_seq"] = self._network_item_seq
+            self.network_client.send_input(self._network_input_state)
+            return True
+
+        idx = self.local_player_index if self.network_server is not None else 0
+        if self.network_server is None and x is not None and y is not None:
+            idxs = self._view_player_indices()
+            rects = self._human_viewport_rects(max(1, self.width()), max(1, self.height()))
+            for view_i, rect in enumerate(rects[:len(idxs)]):
+                rx, ry, rw, rh = rect
+                if rx <= x < rx + rw and ry <= y < ry + rh:
+                    idx = idxs[view_i]
+                    break
+        return self._trigger_manual_item_for_player(idx)
+
+    def _trigger_manual_item_for_player(self, idx):
+        try:
+            pl = self.players[int(idx)]
+        except Exception:
+            return False
+        now = time.time()
+        if getattr(pl, "is_ai", False) or getattr(pl, "finished", False):
+            return False
+        if self.map_name == "Raeuber & Bulle" or not getattr(self, "powerups_enabled", True):
+            return False
+        if not pl.pending_item:
+            return False
+        if now < pl.item_roulette_end_time:
+            return False
+        item_id = pl.pending_item
+        pl.pending_item = None
+        pl.pending_item_execute_time = 0.0
+        pl.item_roulette_show_until = now + 0.35
+        pl.item_roulette_result = item_id
+        self._execute_item(pl, item_id, now)
+        return True
+
+    def _consume_remote_manual_items(self):
+        if self.network_server is None:
+            return
+        for slot in range(1, min(self.num_humans, len(self.players))):
+            state = self.network_server.remote_inputs_for_slot(slot)
+            seq = int(state.get("item_seq", 0) or 0)
+            if seq <= int(self._remote_item_seq_seen.get(slot, 0) or 0):
+                continue
+            self._remote_item_seq_seen[slot] = seq
+            self._trigger_manual_item_for_player(slot)
 
     def _apply_remote_keys_for_slot(self, slot):
         if self.network_server is None:
@@ -728,6 +794,8 @@ class RaceWidget(QOpenGLWidget):
                     self._apply_remote_keys_for_slot(i)
                 keys_cfg = PLAYER_CONFIGS[i]["keys"]  # (fwd, bwd, left, right)
                 self._update_player(self.players[i], dt, *keys_cfg)
+
+            self._consume_remote_manual_items()
 
             # KI-Spieler updaten
             for i in range(self.num_humans, len(self.players)):
@@ -2873,7 +2941,11 @@ class RaceWidget(QOpenGLWidget):
             p.setPen(QColor(200, 200, 200, 220))
             p.setFont(QFont("Arial", 8))
             if pl.pending_item:
-                p.drawText(x + 52, y + 28, box_w - 58, 20, Qt.AlignLeft | Qt.AlignVCenter, f"Auto in {remain:.1f}s")
+                if now >= pl.item_roulette_end_time:
+                    sub = f"Linksklick oder Auto {remain:.1f}s"
+                else:
+                    sub = f"Waehlt... {remain:.1f}s"
+                p.drawText(x + 52, y + 28, box_w - 58, 20, Qt.AlignLeft | Qt.AlignVCenter, sub)
 
         p.end()
 
