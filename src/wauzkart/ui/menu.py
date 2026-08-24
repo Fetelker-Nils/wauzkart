@@ -1772,7 +1772,7 @@ class MenuWidget(QWidget):
         self.stack.setCurrentWidget(self.mode_screen)
 
     def _join_lan_race(self):
-        found = discover_hosts(timeout=0.8)
+        found = discover_hosts(timeout=1.6)
         default_host = found[0].get("ip", "") if found else ""
         if found:
             label = found[0]

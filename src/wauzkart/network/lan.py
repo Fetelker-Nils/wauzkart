@@ -1,4 +1,5 @@
 import json
+import ipaddress
 import socket
 import threading
 import time
@@ -41,6 +42,37 @@ def local_lan_ip():
             return socket.gethostbyname(socket.gethostname())
         except Exception:
             return "127.0.0.1"
+
+
+def local_lan_ips():
+    ips = []
+    for candidate in (local_lan_ip(),):
+        if candidate and candidate not in ips and not candidate.startswith("127."):
+            ips.append(candidate)
+    try:
+        host = socket.gethostname()
+        for info in socket.getaddrinfo(host, None, socket.AF_INET, socket.SOCK_DGRAM):
+            ip = info[4][0]
+            if ip and ip not in ips and not ip.startswith("127."):
+                ips.append(ip)
+    except Exception:
+        pass
+    return ips
+
+
+def discovery_targets():
+    targets = {("255.255.255.255", DISCOVERY_PORT)}
+    for ip in local_lan_ips():
+        try:
+            addr = ipaddress.ip_address(ip)
+            if addr.version != 4 or addr.is_loopback:
+                continue
+            parts = str(addr).split(".")
+            if len(parts) == 4:
+                targets.add((".".join(parts[:3] + ["255"]), DISCOVERY_PORT))
+        except Exception:
+            continue
+    return sorted(targets)
 
 
 class LanServer:
@@ -224,6 +256,7 @@ class LanServer:
                 "version": PROTOCOL_VERSION,
                 "name": "Wauz Kart LAN",
                 "ip": self.host_ip,
+                "ips": local_lan_ips(),
                 "port": self.port,
                 "players": taken,
                 "max_players": self.player_count,
@@ -317,15 +350,20 @@ class LanClient:
             pass
 
 
-def discover_hosts(timeout=1.0):
+def discover_hosts(timeout=1.5):
     hosts = []
     seen = set()
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.settimeout(0.2)
         payload = json.dumps({"type": "discover", "version": PROTOCOL_VERSION}).encode("utf-8")
-        sock.sendto(payload, ("255.255.255.255", DISCOVERY_PORT))
+        for target in discovery_targets():
+            try:
+                sock.sendto(payload, target)
+            except Exception:
+                pass
         end = time.time() + float(timeout)
         while time.time() < end:
             try:
@@ -338,7 +376,8 @@ def discover_hosts(timeout=1.0):
                 continue
             if msg.get("type") != "host":
                 continue
-            key = (msg.get("ip") or addr[0], int(msg.get("port", LAN_PORT)))
+            reply_ip = addr[0] or msg.get("ip")
+            key = (reply_ip, int(msg.get("port", LAN_PORT)))
             if key in seen:
                 continue
             seen.add(key)

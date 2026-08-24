@@ -44,6 +44,7 @@ class RaceWidget(QOpenGLWidget):
         self._last_snapshot_send = 0.0
         self._network_snapshot_applied = False
         self._lan_had_remote_players = False
+        self._lan_singleplayer_pending_since = None
         self.lan_singleplayer_message = ""
         self.lan_singleplayer_message_until = 0.0
         self.win_laps     = win_laps
@@ -361,8 +362,20 @@ class RaceWidget(QOpenGLWidget):
         connected = self.network_server.connected_player_count()
         if connected > 1:
             self._lan_had_remote_players = True
+            self._lan_singleplayer_pending_since = None
+            return
+        if self.race_over or self.human_finish_overtime_started_at is not None:
+            self._lan_singleplayer_pending_since = None
+            return
+        if self.countdown_phase != "go":
+            self._lan_singleplayer_pending_since = None
+            return
         if self._lan_had_remote_players and connected <= 1 and self.network_server.player_count > 1:
-            self._switch_lan_host_to_singleplayer(now)
+            if self._lan_singleplayer_pending_since is None:
+                self._lan_singleplayer_pending_since = now
+                return
+            if now - self._lan_singleplayer_pending_since >= 5.0:
+                self._switch_lan_host_to_singleplayer(now)
 
     def _switch_lan_host_to_singleplayer(self, now):
         old_server = self.network_server
