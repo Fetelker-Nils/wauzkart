@@ -1,6 +1,8 @@
 import json
 import platform
+import re
 import urllib.request
+from urllib.error import HTTPError, URLError
 
 from .. import __version__
 
@@ -45,7 +47,7 @@ def installer_url(asset_name=None):
     return f"https://github.com/{REPO}/releases/latest/download/{asset_name}"
 
 
-def check_for_update(timeout=4):
+def _latest_from_api(timeout):
     request = urllib.request.Request(
         LATEST_API_URL,
         headers={
@@ -54,7 +56,33 @@ def check_for_update(timeout=4):
         },
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
-        data = json.loads(response.read().decode("utf-8"))
+        return json.loads(response.read().decode("utf-8"))
+
+
+def _latest_tag_from_redirect(timeout):
+    request = urllib.request.Request(
+        RELEASE_URL,
+        headers={"User-Agent": "WauzKart-UpdateCheck"},
+    )
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        final_url = response.geturl()
+    match = re.search(r"/releases/tag/([^/?#]+)", final_url or "")
+    if not match:
+        return None
+    return match.group(1)
+
+
+def check_for_update(timeout=4):
+    data = {}
+    try:
+        data = _latest_from_api(timeout)
+    except (HTTPError, URLError, TimeoutError, OSError):
+        tag = _latest_tag_from_redirect(timeout)
+        data = {
+            "tag_name": tag,
+            "html_url": f"https://github.com/{REPO}/releases/tag/{tag}" if tag else RELEASE_URL,
+            "assets": [],
+        }
 
     tag = str(data.get("tag_name") or "").strip()
     if not tag or not is_newer_version(tag):
