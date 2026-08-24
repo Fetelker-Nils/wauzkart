@@ -40,10 +40,12 @@ def installer_asset_name():
     return ""
 
 
-def installer_url(asset_name=None):
+def installer_url(asset_name=None, tag=None):
     asset_name = asset_name or installer_asset_name()
     if not asset_name:
         return RELEASE_URL
+    if tag:
+        return f"https://github.com/{REPO}/releases/download/{tag}/{asset_name}"
     return f"https://github.com/{REPO}/releases/latest/download/{asset_name}"
 
 
@@ -89,7 +91,7 @@ def check_for_update(timeout=4):
         return None
 
     asset_name = installer_asset_name()
-    download_url = installer_url(asset_name)
+    download_url = installer_url(asset_name, tag)
     for asset in data.get("assets", []) or []:
         if asset.get("name") == asset_name:
             download_url = asset.get("browser_download_url") or download_url
