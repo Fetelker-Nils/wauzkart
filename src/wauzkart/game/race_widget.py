@@ -2451,11 +2451,15 @@ class RaceWidget(QOpenGLWidget):
 
     def _grant_item(self, player, item_id, now):
         player.pending_item = item_id
-        player.pending_item_execute_time = now + 2.0
+        if getattr(player, "is_ai", False):
+            player.pending_item_execute_time = now + 2.0
+            player.item_roulette_show_until = player.pending_item_execute_time
+        else:
+            player.pending_item_execute_time = 0.0
+            player.item_roulette_show_until = now + 3600.0
         # kleine "Gluecksrad"-Animation oueben rechts
         player.item_roulette_start_time = now
         player.item_roulette_end_time = now + 1.2
-        player.item_roulette_show_until = player.pending_item_execute_time
         player.item_roulette_result = item_id
 
     def _execute_item(self, player, item_id, now):
@@ -2794,6 +2798,8 @@ class RaceWidget(QOpenGLWidget):
         for pl in self.players:
             if not pl.pending_item:
                 continue
+            if not getattr(pl, "is_ai", False):
+                continue
             if now >= pl.pending_item_execute_time:
                 item_id = pl.pending_item
                 pl.pending_item = None
@@ -2937,14 +2943,13 @@ class RaceWidget(QOpenGLWidget):
             p.setFont(QFont("Arial", 10, QFont.Bold))
             p.drawText(x + 52, y + 8, box_w - 58, 22, Qt.AlignLeft | Qt.AlignVCenter, title)
 
-            remain = max(0.0, pl.pending_item_execute_time - now) if pl.pending_item else 0.0
             p.setPen(QColor(200, 200, 200, 220))
             p.setFont(QFont("Arial", 8))
             if pl.pending_item:
                 if now >= pl.item_roulette_end_time:
-                    sub = f"Linksklick oder Auto {remain:.1f}s"
+                    sub = "Linksklick zum Feuern"
                 else:
-                    sub = f"Waehlt... {remain:.1f}s"
+                    sub = "Waehlt..."
                 p.drawText(x + 52, y + 28, box_w - 58, 20, Qt.AlignLeft | Qt.AlignVCenter, sub)
 
         p.end()

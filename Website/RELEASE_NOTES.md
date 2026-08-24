@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.23
+# Wauz Kart v1.0.24
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -25,6 +25,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - LAN-Discovery findet Windows/Linux-Hosts robuster ueber mehrere Broadcast-Adressen
 - Online-Rennen wechseln nicht mehr durch kurze Verbindungswackler in Einzelspieler
 - Items koennen im Rennen mit Linksklick manuell ausgeloest werden
+- Menschliche Spieler-Items feuern nicht mehr automatisch
 - Linux DEB-Installer fuer Systeme ohne AppImage-Support
 - Linux-Build fix fuer PyOpenGL Platform-Module wie `OpenGL.platform.egl`
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect
