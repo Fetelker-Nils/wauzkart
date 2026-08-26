@@ -51,7 +51,8 @@ class RaceWidget(QOpenGLWidget):
         self.lan_singleplayer_message_until = 0.0
         self.win_laps     = win_laps
         self.map_name     = map_name
-        self.track_size   = track_size if map_name != "Raeuber & Bulle" else "klein"
+        self.insignia_mode = (map_name == "Insignien-Diebstahl")
+        self.track_size   = track_size if map_name not in ("Raeuber & Bulle", "Insignien-Diebstahl") else "klein"
         self.map_config   = make_track_config_for_size(map_name, self.track_size)
         self.obstacles    = self.map_config.get("obstacles", [])
 
@@ -286,7 +287,14 @@ class RaceWidget(QOpenGLWidget):
         # Rollen pro Runde (Team bleibt fix: blau/rot)
         self.rb_role_blau = "bulle" if map_name == "Raeuber & Bulle" else None
         self.rb_role_rot = "raeuber" if map_name == "Raeuber & Bulle" else None
-        self.game_timer = (self.rb_round_time_limit if map_name == "Raeuber & Bulle" else None)
+        self.insignia_time_limit = float(rb_round_time or 120) if self.insignia_mode else None
+        self.insignia_score_limit = 20
+        self.insignia_holder = None
+        self.insignia_pos = [0.0, 0.0]
+        self.insignia_scores = [0.0] * len(self.players)
+        self.insignia_steal_cooldown_until = 0.0
+        self.insignia_last_holder = None
+        self.game_timer = self.rb_round_time_limit if map_name == "Raeuber & Bulle" else (self.insignia_time_limit if self.insignia_mode else None)
         self.rb_winner_team = None
         self.rb_button_pos = (0.0, 5.0)
         self.rb_button_radius = 3.5
@@ -302,7 +310,7 @@ class RaceWidget(QOpenGLWidget):
 
         self.items = []
         self.powerup_spawn_interval = 2.5
-        self.max_powerups = 16 if self.powerups_enabled else 0
+        self.max_powerups = (22 if self.insignia_mode else 16) if self.powerups_enabled else 0
         self.next_powerup_spawn_time = (time.time() + 1.0) if self.powerups_enabled else float("inf")
 
         # Item-Boxen (feste Pltze) + initiale Power-ups
@@ -312,7 +320,7 @@ class RaceWidget(QOpenGLWidget):
         if self.powerups_enabled:
             self._init_item_boxes()
             self.item_box_item_pool = ["abknaller", "turbo", "wirbler", "schild", "frost", "oelspur"]
-            for _ in range(10):
+            for _ in range(14 if self.insignia_mode else 10):
                 self._spawn_random_powerup()
 
         self.on_race_over = None  # callback  MainWindow
@@ -626,6 +634,12 @@ class RaceWidget(QOpenGLWidget):
             "winner": self.winner,
             "finish_counter": self.finish_counter,
             "game_timer": self.game_timer,
+            "insignia": {
+                "holder": self.insignia_holder,
+                "pos": list(self.insignia_pos),
+                "scores": list(self.insignia_scores),
+                "limit": self.insignia_score_limit,
+            } if self.insignia_mode else None,
             "players": [self._player_to_snapshot(pl) for pl in self.players],
             "world": world,
         }
@@ -659,6 +673,8 @@ class RaceWidget(QOpenGLWidget):
             "hit_pop_height": float(pl.hit_pop_height),
             "rb_caught": bool(getattr(pl, "rb_caught", False)),
             "rb_color_team": getattr(pl, "rb_color_team", None),
+            "insignia_score": float(getattr(pl, "insignia_score", 0.0)),
+            "has_insignia": bool(getattr(pl, "has_insignia", False)),
             "team": getattr(pl, "team", None),
         }
 
@@ -671,6 +687,17 @@ class RaceWidget(QOpenGLWidget):
         self.winner = snapshot.get("winner", self.winner)
         self.finish_counter = int(snapshot.get("finish_counter", self.finish_counter) or 0)
         self.game_timer = snapshot.get("game_timer", self.game_timer)
+        insignia = snapshot.get("insignia")
+        if isinstance(insignia, dict):
+            self.insignia_holder = insignia.get("holder", self.insignia_holder)
+            pos = insignia.get("pos") or self.insignia_pos
+            if len(pos) >= 2:
+                self.insignia_pos = [float(pos[0]), float(pos[1])]
+            scores = insignia.get("scores") or self.insignia_scores
+            self.insignia_scores = [float(v) for v in scores[:len(self.players)]]
+            while len(self.insignia_scores) < len(self.players):
+                self.insignia_scores.append(0.0)
+            self.insignia_score_limit = int(insignia.get("limit", self.insignia_score_limit) or self.insignia_score_limit)
         for idx, data in enumerate(snapshot.get("players", [])):
             if idx >= len(self.players):
                 break
@@ -710,6 +737,8 @@ class RaceWidget(QOpenGLWidget):
         pl.hit_pop_height = float(data.get("hit_pop_height", pl.hit_pop_height))
         pl.rb_caught = bool(data.get("rb_caught", getattr(pl, "rb_caught", False)))
         pl.rb_color_team = data.get("rb_color_team", getattr(pl, "rb_color_team", None))
+        pl.insignia_score = float(data.get("insignia_score", getattr(pl, "insignia_score", 0.0)) or 0.0)
+        pl.has_insignia = bool(data.get("has_insignia", getattr(pl, "has_insignia", False)))
         pl.team = data.get("team", getattr(pl, "team", None))
 
     def _apply_network_world(self, world):
@@ -785,7 +814,10 @@ class RaceWidget(QOpenGLWidget):
             if self.game_timer is not None:
                 self.game_timer -= dt
                 if self.game_timer <= 0:
-                    self._end_race_raeuber_win()
+                    if self.map_name == "Raeuber & Bulle":
+                        self._end_race_raeuber_win()
+                    elif self.insignia_mode:
+                        self._end_insignia_game()
 
         if simulate_this_frame and self.is_racing() and not self.race_over:
             # Menschliche Spieler updaten
@@ -805,6 +837,9 @@ class RaceWidget(QOpenGLWidget):
             for i in range(len(self.players)):
                 for j in range(i+1,len(self.players)):
                     self._collision(self.players[i], self.players[j])
+
+            if self.insignia_mode:
+                self._update_insignia_mode(now, dt)
 
             # Raeuber & Bulle: Fangen-Mechanik und Freilassung
             if self.map_name == "Raeuber & Bulle":
@@ -1152,6 +1187,27 @@ class RaceWidget(QOpenGLWidget):
 
         if self.map_name == "Raeuber & Bulle":
             self._draw_rb_release_button()
+        if self.insignia_mode:
+            self._draw_insignia()
+
+    def _draw_insignia(self):
+        holder = self._insignia_holder_player()
+        if holder is not None:
+            x, y, z = holder.pos[0], holder.pos[1] + 2.7, holder.pos[2]
+        else:
+            x, y, z = self.insignia_pos[0], 1.1, self.insignia_pos[1]
+
+        spin = (time.time() * 120.0) % 360.0
+        glPushMatrix()
+        glTranslatef(float(x), float(y), float(z))
+        glRotatef(spin, 0, 1, 0)
+        _gl_box_lit(-0.95, -0.08, -0.18, 0.95, 0.08, 0.18, (1.0, 0.74, 0.05))
+        _gl_box_lit(-0.18, -0.08, -0.95, 0.18, 0.08, 0.95, (1.0, 0.74, 0.05))
+        glRotatef(45, 0, 1, 0)
+        _gl_box_lit(-0.70, -0.07, -0.16, 0.70, 0.07, 0.16, (1.0, 0.90, 0.24))
+        _gl_box_lit(-0.16, -0.07, -0.70, 0.16, 0.07, 0.70, (1.0, 0.90, 0.24))
+        _gl_box_lit(-0.30, -0.16, -0.30, 0.30, 0.16, 0.30, (0.95, 0.55, 0.02))
+        glPopMatrix()
 
     def _draw_rb_release_button(self):
         """Raeuber & Bulle: Knopf ist nur 'draussen', wenn jemand im Knast ist."""
@@ -1547,6 +1603,57 @@ class RaceWidget(QOpenGLWidget):
         
         return False, None
 
+    def _update_insignia_ai(self, pl, dt):
+        now = time.time()
+        holder = self._insignia_holder_player()
+        half = float(self.map_config.get("outer_base", self.outer_r))
+        margin = 14.0
+
+        if holder is pl:
+            nearest, dist = self._get_nearest_other_car(pl)
+            if nearest is not None and dist < 55.0:
+                dx = pl.pos[0] - nearest.pos[0]
+                dz = pl.pos[2] - nearest.pos[2]
+                length = max(0.01, math.sqrt(dx * dx + dz * dz))
+                tx = pl.pos[0] + (dx / length) * 42.0
+                tz = pl.pos[2] + (dz / length) * 42.0
+            else:
+                angle = (now * 38.0 + self.players.index(pl) * 90.0) % 360.0
+                tx = math.sin(math.radians(angle)) * (half - margin - 10.0)
+                tz = math.cos(math.radians(angle)) * (half - margin - 10.0)
+        elif holder is not None:
+            tx, tz = holder.pos[0], holder.pos[2]
+        else:
+            tx, tz = self.insignia_pos[0], self.insignia_pos[1]
+
+        if pl.pending_item is None and (now - pl.last_box_collected_time) >= 5.0:
+            nearest_box, box_dist = self._get_nearest_available_item_box(pl.pos, now)
+            if nearest_box is not None and box_dist < 32.0:
+                tx, tz = nearest_box.pos[0], nearest_box.pos[2]
+
+        tx = _clamp(tx, -half + margin, half - margin)
+        tz = _clamp(tz, -half + margin, half - margin)
+        dx = tx - pl.pos[0]
+        dz = tz - pl.pos[2]
+        target_rot = math.degrees(math.atan2(dx, dz))
+        diff = (target_rot - pl.rot + 360) % 360
+        if diff > 180:
+            diff -= 360
+
+        d = pl.ai_diff
+        speed_factor = 0.86 if holder is pl else 0.94
+        if abs(diff) > 70:
+            speed_factor *= 0.55
+        target_speed = pl.max_speed * d.get("speed", 1.0) * speed_factor
+        if pl.velocity < target_speed:
+            pl.velocity = min(pl.velocity + pl.acc * dt * 1.15, target_speed)
+        else:
+            pl.velocity = max(target_speed, pl.velocity - pl.friction * dt * 0.8)
+        if abs(pl.velocity) > 0.2:
+            steer = min(1.0, abs(diff) / 20.0) * d.get("sharp", 1.0)
+            pl.rot += math.copysign(pl.turn_speed * dt * steer, diff)
+        self._physics(pl, dt, abs(pl.velocity) > 0.2)
+
     #  KI-Physik 
     def _update_ai(self, pl, dt):
         """Intelligente KI mit Gegner-Tracking, Multi-Point-Lookahead und berholmanvern."""
@@ -1693,6 +1800,21 @@ class RaceWidget(QOpenGLWidget):
                 else:
                     # Normal fahren
                     pass
+
+        if self.insignia_mode:
+            if pl.finished:
+                self._update_finish_ghost(pl, dt)
+                return
+            self._update_boost_status(pl, dt)
+            if pl.crash_timer > time.time():
+                pl.velocity *= 0.82
+                return
+            if self._avoid_obstacles_ai(pl, dt):
+                return
+            if self._avoid_cars_ai(pl, dt):
+                return
+            self._update_insignia_ai(pl, dt)
+            return
         
         # berprfe Boost-Status
         self._update_boost_status(pl, dt)
@@ -2510,9 +2632,11 @@ class RaceWidget(QOpenGLWidget):
             if isinstance(attack, dict):
                 execute_time = attack.get("execute_time", now)
                 attack_type = attack.get("attack_type")
+                attacker = attack.get("attacker")
                 target = attack.get("target")
             else:
                 execute_time, attack_type, attacker_name, target = attack
+                attacker = None
             if now < execute_time:
                 remaining.append(attack)
                 continue
@@ -2530,6 +2654,8 @@ class RaceWidget(QOpenGLWidget):
                 self._apply_wirbler_effect(target, now)
             elif attack_type == "frost":
                 self._apply_frost_effect(target, now)
+            if self.insignia_mode and attacker is not None:
+                self._try_steal_insignia(attacker, target, now, force=True)
 
         self.pending_attacks = remaining
 
@@ -3313,3 +3439,132 @@ class RaceWidget(QOpenGLWidget):
             self._end_rb_round("raeuber")
         else:
             self._end_rb_game("raeuber")
+
+    def _player_index(self, player):
+        for idx, pl in enumerate(self.players):
+            if pl is player:
+                return idx
+        return None
+
+    def _insignia_holder_player(self):
+        idx = self.insignia_holder
+        if idx is None:
+            return None
+        try:
+            idx = int(idx)
+        except Exception:
+            return None
+        if 0 <= idx < len(self.players):
+            return self.players[idx]
+        return None
+
+    def _set_insignia_holder(self, idx):
+        for pl in self.players:
+            pl.has_insignia = False
+        if idx is None:
+            self.insignia_holder = None
+            return
+        idx = int(idx)
+        if 0 <= idx < len(self.players):
+            self.insignia_holder = idx
+            self.players[idx].has_insignia = True
+            self.insignia_last_holder = idx
+
+    def _try_steal_insignia(self, attacker, target, now, force=False):
+        if not self.insignia_mode or self.race_over:
+            return False
+        attacker_idx = self._player_index(attacker)
+        target_idx = self._player_index(target)
+        if attacker_idx is None or target_idx is None:
+            return False
+        if self.insignia_holder != target_idx or attacker_idx == target_idx:
+            return False
+        if not force and now < self.insignia_steal_cooldown_until:
+            return False
+        if getattr(attacker, "finished", False) or getattr(target, "finished", False):
+            return False
+        if not force:
+            dx = attacker.pos[0] - target.pos[0]
+            dz = attacker.pos[2] - target.pos[2]
+            if (dx * dx + dz * dz) > 3.8 * 3.8:
+                return False
+        self._set_insignia_holder(attacker_idx)
+        self.insignia_steal_cooldown_until = now + 1.25
+        try:
+            self.recorder.events.append({"type": "insignia_steal", "frame": self.frame_idx, "player": attacker_idx})
+        except Exception:
+            pass
+        return True
+
+    def _update_insignia_mode(self, now, dt):
+        if self.race_over:
+            return
+        while len(self.insignia_scores) < len(self.players):
+            self.insignia_scores.append(0.0)
+
+        holder = self._insignia_holder_player()
+        if holder is None or getattr(holder, "finished", False):
+            self._set_insignia_holder(None)
+            nearest_idx = None
+            nearest_d2 = 2.8 * 2.8
+            for idx, pl in enumerate(self.players):
+                if getattr(pl, "finished", False):
+                    continue
+                dx = pl.pos[0] - self.insignia_pos[0]
+                dz = pl.pos[2] - self.insignia_pos[1]
+                d2 = dx * dx + dz * dz
+                if d2 <= nearest_d2:
+                    nearest_d2 = d2
+                    nearest_idx = idx
+            if nearest_idx is not None:
+                self._set_insignia_holder(nearest_idx)
+                self.insignia_steal_cooldown_until = now + 0.8
+                holder = self.players[nearest_idx]
+
+        holder_idx = self.insignia_holder
+        if holder is not None and holder_idx is not None:
+            self.insignia_pos = [float(holder.pos[0]), float(holder.pos[2])]
+            self.insignia_scores[int(holder_idx)] += float(dt)
+            holder.insignia_score = self.insignia_scores[int(holder_idx)]
+            if self.insignia_scores[int(holder_idx)] >= float(self.insignia_score_limit):
+                self._end_insignia_game()
+                return
+            for idx, other in enumerate(self.players):
+                if idx == holder_idx or getattr(other, "finished", False):
+                    continue
+                self._try_steal_insignia(other, holder, now, force=False)
+
+        for idx, pl in enumerate(self.players):
+            pl.insignia_score = self.insignia_scores[idx] if idx < len(self.insignia_scores) else 0.0
+
+    def _end_insignia_game(self):
+        if self.race_over:
+            return
+        self.race_over = True
+        now = time.time()
+        scores = list(self.insignia_scores)
+        while len(scores) < len(self.players):
+            scores.append(0.0)
+
+        order = list(range(len(self.players)))
+        holder = self.insignia_holder if isinstance(self.insignia_holder, int) else -1
+        order.sort(key=lambda i: (-scores[i], 0 if i == holder else 1, i))
+        winner_idx = order[0] if order else None
+        self.winner = self.players[winner_idx] if winner_idx is not None else None
+
+        for place, idx in enumerate(order, start=1):
+            pl = self.players[idx]
+            pl.insignia_score = scores[idx]
+            pl.insignia_winner = (idx == winner_idx)
+            pl.finished = True
+            pl.finish_time = now
+            pl.finish_place = place
+        self.finish_counter = len(order)
+
+        try:
+            if winner_idx is not None:
+                unlock_badge("insignia_thief")
+        except Exception:
+            pass
+        if self.on_race_over:
+            self.on_race_over(self.players, self.recorder, self.recorder.frames, self.recorder.events)

@@ -467,6 +467,13 @@ article p {
     url("assets/background_garage.webp") center / cover no-repeat;
 }
 
+.mode-card.insignia-card {
+  background:
+    linear-gradient(0deg, rgba(8, 11, 16, 0.98), rgba(8, 11, 16, 0.36)),
+    radial-gradient(circle at 70% 22%, rgba(255, 216, 74, 0.38), transparent 31%),
+    url("assets/background_mode.webp") center / cover no-repeat;
+}
+
 .mode-card::before {
   content: "";
   position: absolute;

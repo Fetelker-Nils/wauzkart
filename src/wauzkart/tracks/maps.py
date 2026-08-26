@@ -421,6 +421,38 @@ MAPS = {
                 {"x": 80, "z": 0},
             ],
         }
+    },
+    "Insignien-Diebstahl": {
+        "name": "Insignien-Diebstahl",
+        "description": "Arena-Battle: halte die goldene Insigne, klaue sie zurueck und sammle Punkte.",
+        "unlock_level": 1,
+        "config": {
+            "type": "open_square",
+            "outer_mod": lambda a: 1.0,
+            "inner_mod": lambda a: 0.0,
+            "outer_base": 92,
+            "inner_base": 0,
+            "width_factor": 1.0,
+            "obstacles": [
+                {"x": -24, "z": 0, "w": 6, "l": 18, "h": 2.4, "color": (0.48, 0.48, 0.50)},
+                {"x": 24, "z": 0, "w": 6, "l": 18, "h": 2.4, "color": (0.48, 0.48, 0.50)},
+                {"x": 0, "z": -24, "w": 18, "l": 6, "h": 2.4, "color": (0.56, 0.44, 0.30)},
+                {"x": 0, "z": 24, "w": 18, "l": 6, "h": 2.4, "color": (0.56, 0.44, 0.30)},
+                {"x": -92, "z": 0, "w": 2, "l": 184, "h": 3.2, "color": (0.62, 0.62, 0.62)},
+                {"x": 92, "z": 0, "w": 2, "l": 184, "h": 3.2, "color": (0.62, 0.62, 0.62)},
+                {"x": 0, "z": -92, "w": 184, "l": 2, "h": 3.2, "color": (0.62, 0.62, 0.62)},
+                {"x": 0, "z": 92, "w": 184, "l": 2, "h": 3.2, "color": (0.62, 0.62, 0.62)},
+            ],
+            "start_positions": [
+                (-12, -54, 0), (-4, -54, 0), (4, -54, 0), (12, -54, 0),
+            ],
+            "parking_spots": [],
+            "item_boxes": [
+                {"x": -58, "z": -58}, {"x": 58, "z": -58}, {"x": -58, "z": 58}, {"x": 58, "z": 58},
+                {"x": 0, "z": -62}, {"x": 0, "z": 62}, {"x": -62, "z": 0}, {"x": 62, "z": 0},
+                {"x": -34, "z": 34}, {"x": 34, "z": -34},
+            ],
+        }
     }
 }
 

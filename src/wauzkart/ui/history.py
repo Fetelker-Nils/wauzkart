@@ -104,6 +104,13 @@ class HistoryWidget(QWidget):
                     wtxt += "  Gewinner: Rot"
                 else:
                     wtxt += "  Gewinner: Down"
+            elif data.get("map_name") == "Insignien-Diebstahl":
+                winner = next((p for p in data.get("players", []) if p.get("insignia_winner")), None)
+                if winner is None:
+                    players = data.get("players", [])
+                    winner = max(players, key=lambda p: p.get("insignia_score", 0), default=None)
+                if winner:
+                    wtxt += f"  Sieger {winner.get('name', '?')} ({int(winner.get('insignia_score', 0))} Punkte)"
             else:
                 winner = next((p for p in data.get('players',[]) if p.get('finish_place')==1), None)
                 if winner and winner.get('finish_time') is not None:
@@ -111,7 +118,7 @@ class HistoryWidget(QWidget):
             btn = QPushButton(wtxt)
             btn.setFont(QFont("Arial", 12, QFont.Bold))
             btn.setMinimumHeight(54)
-            btn.setStyleSheet(_history_button_style("#ff8a2a" if data.get("map_name") == "Raeuber & Bulle" else HISTORY_GOLD))
+            btn.setStyleSheet(_history_button_style("#ff8a2a" if data.get("map_name") in ("Raeuber & Bulle", "Insignien-Diebstahl") else HISTORY_GOLD))
             btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             def make_cb(p=path,d=data):
                 self.on_show_race(p,d)

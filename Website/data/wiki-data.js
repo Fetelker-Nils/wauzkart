@@ -126,6 +126,12 @@ const tracks = [
     unlockLevel: 1,
     type: "Teammodus",
     description: "Offene Team-Map mit Gefaengnis, Befreiungsknopf und Rollen."
+  },
+  {
+    name: "Insignien-Diebstahl",
+    unlockLevel: 1,
+    type: "Battle",
+    description: "Arena-Map mit goldener Insigne, vielen Boxen und Punktejagd."
   }
 ];
 
@@ -170,6 +176,10 @@ const modes = [
   {
     name: "Raeuber & Bulle",
     description: "Teamspiel mit Raeubern, Bullen, Gefaengnis und Befreiungsknopf."
+  },
+  {
+    name: "Insignien-Diebstahl",
+    description: "Battle-Modus: Eine goldene Insigne liegt in der Arena. Wer sie haelt sammelt Punkte, andere klauen sie durch Treffer oder engen Kontakt."
   }
 ];
 

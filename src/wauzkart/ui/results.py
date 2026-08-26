@@ -86,6 +86,8 @@ class ResultWidget(QWidget):
 
         if map_name == "Raeuber & Bulle":
             self._show_bulle_raeuber_result(players, lay, xp_gained, levelups, progress, on_menu, on_replay, on_history)
+        elif map_name == "Insignien-Diebstahl":
+            self._show_insignia_result(players, lay, xp_gained, levelups, progress, on_menu, on_replay, on_history)
         else:
             self._show_normal_result(players, recorder, lay, xp_gained, levelups, progress, on_menu, on_replay, on_history)
 
@@ -150,6 +152,79 @@ class ResultWidget(QWidget):
             br_lay.addWidget(_result_button("ALLE RENNEN", on_history, "#ff8a2a"))
         br_lay.addWidget(_result_button("HAUPTMENUE", on_menu, "#52647f", True))
         lay.addWidget(btn_row)
+
+    def _show_insignia_result(self, players, lay, xp_gained, levelups, progress, on_menu, on_replay, on_history):
+        title = QLabel("INSIGNIEN-DIEBSTAHL BEENDET")
+        title.setFont(QFont("Arial", 32, QFont.Bold))
+        title.setStyleSheet(f"color:{RESULT_GOLD}; background:transparent; border:none;")
+        title.setAlignment(Qt.AlignCenter)
+        lay.addWidget(title); lay.addSpacing(20)
+
+        winner = next((p for p in players if getattr(p, "insignia_winner", False)), None)
+        if winner is None and players:
+            winner = max(players, key=lambda p: getattr(p, "insignia_score", 0.0))
+        if winner is not None:
+            win_lbl = QLabel(f"Insigne gewonnen: {winner.name} mit {int(getattr(winner, 'insignia_score', 0.0))} Punkten")
+            win_lbl.setFont(QFont("Arial", 16, QFont.Bold))
+            win_lbl.setStyleSheet(f"color:#111111; background:{RESULT_GOLD}; border:2px solid #fff0a3; border-radius:5px; padding:10px 18px;")
+            win_lbl.setAlignment(Qt.AlignCenter)
+            lay.addWidget(win_lbl)
+            lay.addSpacing(16)
+
+        places = ["P1", "P2", "P3", "P4"]
+        place_colors = ["#ffd700", "#c0c0c0", "#cd7f32", "#888888"]
+        sorted_players = sorted(players, key=lambda p: p.finish_place or 99)
+        for pl in sorted_players:
+            place = pl.finish_place or 4
+            place_txt = places[min(place - 1, 3)]
+            col = place_colors[min(place - 1, 3)]
+            kind = "KI" if pl.is_ai else "DU"
+            score = int(getattr(pl, "insignia_score", 0.0) or 0)
+            held = "INSIGNE" if getattr(pl, "has_insignia", False) else ""
+            lay.addWidget(_race_row(f"{place_txt}   {kind:<2}   {pl.name:<16}   {score:>3} PUNKTE   {held}", col))
+
+        lay.addSpacing(28)
+        self._show_progress_block(lay, xp_gained, levelups, progress)
+
+        btn_row = QWidget(); br_lay = QHBoxLayout(); btn_row.setLayout(br_lay)
+        br_lay.setAlignment(Qt.AlignCenter); br_lay.setSpacing(20)
+        br_lay.addWidget(_result_button("HIGHLIGHTS", on_replay))
+        if on_history:
+            br_lay.addWidget(_result_button("ALLE RENNEN", on_history, "#ff8a2a"))
+        br_lay.addWidget(_result_button("HAUPTMENUE", on_menu, "#52647f", True))
+        lay.addWidget(btn_row)
+
+    def _show_progress_block(self, lay, xp_gained, levelups, progress):
+        levelups = levelups or []
+        progress = progress or {}
+        if levelups:
+            lu = QLabel("LEVEL UP")
+            lu.setFont(QFont("Arial", 28, QFont.Bold))
+            lu.setStyleSheet("color:#44ff44;")
+            lu.setAlignment(Qt.AlignCenter)
+            lay.addWidget(lu)
+            for item in levelups:
+                unlocked = item.get("unlocked")
+                unlocked_list = unlocked if isinstance(unlocked, list) else ([unlocked] if unlocked else [])
+                if not unlocked_list:
+                    unlocked_list = ["(alle Items bereits freigeschaltet)"]
+                for u in unlocked_list:
+                    lbl = QLabel(f"Freigeschaltet: {u}")
+                    lbl.setFont(QFont("Arial", 14, QFont.Bold))
+                    lbl.setStyleSheet("color:#dddddd;")
+                    lbl.setAlignment(Qt.AlignCenter)
+                    lay.addWidget(lbl)
+            lay.addSpacing(16)
+        if progress:
+            level = progress.get("level", 1)
+            xp = progress.get("xp", 0)
+            need = progress.get("need", level * 100)
+            xp_lbl = QLabel(f"XP +{int(xp_gained)}   |   Level {level}   ({xp}/{need} XP)")
+            xp_lbl.setFont(QFont("Arial", 13, QFont.Bold))
+            xp_lbl.setStyleSheet(f"color:#d7dee8; background:{RESULT_PANEL}; border:2px solid {RESULT_EDGE}; border-radius:5px; padding:10px 18px;")
+            xp_lbl.setAlignment(Qt.AlignCenter)
+            lay.addWidget(xp_lbl)
+            lay.addSpacing(18)
 
     def _show_bulle_raeuber_result(self, players, lay, xp_gained, levelups, progress, on_menu, on_replay, on_history):
         title = QLabel("RAEUBER & BULLE BEENDET")

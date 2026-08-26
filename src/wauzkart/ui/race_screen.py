@@ -399,8 +399,24 @@ class RaceScreen(QWidget):
         else:
             self.lbl_rb_roles.setVisible(False)
         
-        # Timer fuer Raeuber & Bulle
-        if gl.map_name == "Raeuber & Bulle" and gl.game_timer is not None:
+        # Timer fuer Battle-Modi
+        if gl.map_name == "Insignien-Diebstahl" and gl.game_timer is not None:
+            holder = getattr(gl, "insignia_holder", None)
+            holder_name = "-"
+            try:
+                if holder is not None and 0 <= int(holder) < len(gl.players):
+                    holder_name = gl.players[int(holder)].name
+            except Exception:
+                holder_name = "-"
+            best = 0
+            try:
+                best = max(int(v) for v in getattr(gl, "insignia_scores", []) or [0])
+            except Exception:
+                best = 0
+            limit = int(getattr(gl, "insignia_score_limit", 20) or 20)
+            self.lbl_timer.setText(f"Zeit: {max(0, gl.game_timer):.1f}s | Insigne: {holder_name} | Top: {best}/{limit}")
+            self.lbl_timer.setVisible(True)
+        elif gl.map_name == "Raeuber & Bulle" and gl.game_timer is not None:
             timer_text = f"Zeit: {max(0, gl.game_timer):.1f}s"
             if now < getattr(gl, "rb_button_cooldown_until", 0.0):
                 timer_text += f" | Knopf CD: {gl.rb_button_cooldown_until - now:.1f}s"
@@ -428,12 +444,17 @@ class RaceScreen(QWidget):
                     lines.append("Im Gefaengnis")
                 else:
                     lines.append("Auf der Flucht" if pl.team == "raeuber" else "Jagt Raeuber")
+            elif gl.map_name == "Insignien-Diebstahl":
+                score = int(getattr(pl, "insignia_score", 0.0) or 0)
+                limit = int(getattr(gl, "insignia_score_limit", 20) or 20)
+                lines.append(f"Insigne: {'JA' if getattr(pl, 'has_insignia', False) else 'NEIN'}")
+                lines.append(f"Score: {score}/{limit}")
             else:
                 lines.append(f"Runde: {pl.laps}/{self.win_laps}")
                 place = standings.get(pl, 4)
                 lines.append(f"{em.get(place,'')} Platz {place}")
             if pl.start_time: lines.append(f"{now-pl.start_time:.1f}s")
             if pl.crash_timer > now: lines.append(" CRASH!")
-            if gl.map_name != "Raeuber & Bulle" and pl.finished and pl.finish_place: lines.append(f"{em.get(pl.finish_place,'')} Endplatz {pl.finish_place}")
+            if gl.map_name not in ("Raeuber & Bulle", "Insignien-Diebstahl") and pl.finished and pl.finish_place: lines.append(f"{em.get(pl.finish_place,'')} Endplatz {pl.finish_place}")
             elif pl.rocket_boost and not gl.is_racing(): lines.append(f" +{pl.boost_amount*100:.0f}%")
             self.hud_labels[i].setText("\n".join(lines))

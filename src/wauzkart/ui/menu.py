@@ -752,7 +752,7 @@ class MenuWidget(QWidget):
         lay.addSpacing(8)
 
         self.mode_combo = QComboBox()
-        self.mode_combo.addItems(["Rennen", "Raeuber & Bulle"])
+        self.mode_combo.addItems(["Rennen", "Raeuber & Bulle", "Insignien-Diebstahl"])
         self.mode_combo.setCurrentText("Rennen")
         self.mode_combo.setFont(QFont("Arial",15))
         self.mode_combo.setStyleSheet(COMBO_STYLE)
@@ -777,8 +777,9 @@ class MenuWidget(QWidget):
         map_btn_row = QWidget(); mbr_lay = QHBoxLayout()
         mbr_lay.setAlignment(Qt.AlignCenter); mbr_lay.setSpacing(8); map_btn_row.setLayout(mbr_lay)
         self.map_buttons = []
-        self.available_maps = global_progression.get_available_maps() if global_progression else ["Raeuber & Bulle"]
-        default_map = "Raeuber & Bulle" if "Raeuber & Bulle" in self.available_maps else ("Oval" if "Oval" in self.available_maps else (self.available_maps[0] if self.available_maps else "Oval"))
+        battle_maps = {"Raeuber & Bulle", "Insignien-Diebstahl"}
+        self.available_maps = [m for m in (global_progression.get_available_maps() if global_progression else ["Oval"]) if m not in battle_maps]
+        default_map = "Oval" if "Oval" in self.available_maps else (self.available_maps[0] if self.available_maps else "Oval")
         self.selected_map = default_map
 
         for map_name in MAPS.keys():
@@ -909,15 +910,17 @@ class MenuWidget(QWidget):
         texts = {
             "Rennen": " Klassisches Autorennen mit Runden und Platzierungen",
             "Raeuber & Bulle": " 6 vs 6  Blau/Rot Teams, Rollen wechseln pro Runde, Punkt pro Rundensieg",
+            "Insignien-Diebstahl": " Arena-Battle: Insigne halten, Punkte sammeln, durch Treffer klauen",
         }
         self.mode_desc_lbl.setText(texts.get(mode, ""))
         # Update KI/Steuerungs-Info abhngig vom Modus.
         self._select_players(getattr(self, "selected_players", 2))
 
         is_rb = (mode == "Raeuber & Bulle")
+        is_insignia = (mode == "Insignien-Diebstahl")
         # Rennen: Rundenanzahl sichtbar, RB-Settings verstecken
-        self.laps_lbl.setVisible(not is_rb)
-        self.laps_wrap.setVisible(not is_rb)
+        self.laps_lbl.setVisible(not (is_rb or is_insignia))
+        self.laps_wrap.setVisible(not (is_rb or is_insignia))
         # Raeuber & Bulle: Match-Settings sichtbar
         self.rb_settings_lbl.setVisible(is_rb)
         self.rb_settings_wrap.setVisible(is_rb)
@@ -972,6 +975,14 @@ class MenuWidget(QWidget):
                 if dlg.exec_() != QDialog.Accepted:
                     return  # Abbruch
                 teams = dlg.get_teams()
+        elif mode == "Insignien-Diebstahl":
+            map_name = "Insignien-Diebstahl"
+            num_humans = self.selected_players
+            laps = 0
+            diff_name = self.diff_combo.currentText()
+            teams = None
+            rb_rounds = None
+            rb_round_time = int(self.rb_time_combo.currentText())
         else:
             map_name = self.selected_map
             num_humans = self.selected_players
@@ -1048,6 +1059,9 @@ class MenuWidget(QWidget):
         self.rb_time_combo = QComboBox()
         self.rb_time_combo.addItems(["60", "90", "120", "180", "240"])
         self.rb_time_combo.setCurrentText("180")
+        self.insignia_time_combo = QComboBox()
+        self.insignia_time_combo.addItems(["60", "90", "120", "180", "240"])
+        self.insignia_time_combo.setCurrentText("120")
         self.laps_combo = QComboBox()
         self.laps_combo.addItems([str(i) for i in range(1, 11)])
         self.laps_combo.setCurrentText("3")
@@ -1067,7 +1081,8 @@ class MenuWidget(QWidget):
         }
         self._all_characters = list(CHARACTER_NAMES or ["Mauz"])
         self._all_styles = list(STYLE_RATINGS.keys()) or ["Standard"]
-        self._all_maps = [m for m in MAPS.keys() if m != "Raeuber & Bulle"] or ["Oval"]
+        self._battle_maps = {"Raeuber & Bulle", "Insignien-Diebstahl"}
+        self._all_maps = [m for m in MAPS.keys() if m not in self._battle_maps] or ["Oval"]
         self._reload_garage_unlocks()
 
         self.slot_characters = []
@@ -1099,13 +1114,13 @@ class MenuWidget(QWidget):
     def _reload_garage_unlocks(self, reset_slots=False):
         self._available_characters = global_progression.get_available_characters() if global_progression else list(self._all_characters)
         self._styles = global_progression.get_available_styles() if global_progression else list(self._all_styles)
-        self.available_maps = [m for m in (global_progression.get_available_maps() if global_progression else list(self._all_maps)) if m != "Raeuber & Bulle"]
+        self.available_maps = [m for m in (global_progression.get_available_maps() if global_progression else list(self._all_maps)) if m not in self._battle_maps]
 
         self._available_characters = [c for c in self._available_characters if c in self._all_characters] or ["Mauz"]
         self._styles = [s for s in self._styles if s in self._all_styles] or ["Standard"]
         self.available_maps = [m for m in self.available_maps if m in self._all_maps] or ["Oval"]
 
-        if self.selected_map == "Raeuber & Bulle":
+        if self.selected_map in self._battle_maps:
             pass
         elif self.selected_map not in self.available_maps:
             self.selected_map = "Oval" if "Oval" in self.available_maps else self.available_maps[0]
@@ -1503,12 +1518,15 @@ class MenuWidget(QWidget):
         left_lay.addWidget(hint)
         race_btn = self._menu_button("RENNEN", 310, 82)
         rb_btn = self._menu_button("RAEUBER & BULLE", 310, 82)
+        insignia_btn = self._menu_button("INSIGNIEN-DIEBSTAHL", 310, 82)
         back_btn = self._menu_button("ZURUECK", 230, 64)
         race_btn.clicked.connect(lambda: self._choose_mode("Rennen"))
         rb_btn.clicked.connect(lambda: self._choose_mode("Raeuber & Bulle"))
+        insignia_btn.clicked.connect(lambda: self._choose_mode("Insignien-Diebstahl"))
         back_btn.clicked.connect(lambda: self.stack.setCurrentWidget(self.player_screen))
         left_lay.addWidget(race_btn)
         left_lay.addWidget(rb_btn)
+        left_lay.addWidget(insignia_btn)
         left_lay.addSpacing(20)
         left_lay.addWidget(back_btn)
         return screen
@@ -1695,6 +1713,20 @@ class MenuWidget(QWidget):
         rb_setup_lay.addWidget(self.rb_time_combo, 1, 1)
         right_lay.addWidget(self.rb_setup_panel)
 
+        self.insignia_setup_panel = QWidget()
+        self.insignia_setup_panel.setStyleSheet("background:transparent; border:none;")
+        insignia_setup_lay = QGridLayout()
+        insignia_setup_lay.setContentsMargins(0, 0, 0, 0)
+        insignia_setup_lay.setHorizontalSpacing(8)
+        insignia_setup_lay.setVerticalSpacing(8)
+        self.insignia_setup_panel.setLayout(insignia_setup_lay)
+        self.insignia_time_combo.setFont(QFont("Arial", 12, QFont.Bold))
+        self.insignia_time_combo.setStyleSheet(COMBO_STYLE)
+        self.insignia_time_combo.setFixedWidth(160)
+        insignia_setup_lay.addWidget(setup_lbl("BATTLE-ZEIT"), 0, 0)
+        insignia_setup_lay.addWidget(self.insignia_time_combo, 0, 1)
+        right_lay.addWidget(self.insignia_setup_panel)
+
         right_lay.addStretch(1)
 
         start = self._menu_button("START", 300, 82)
@@ -1833,12 +1865,12 @@ class MenuWidget(QWidget):
         msg.exec_()
 
     def _choose_mode(self, mode):
-        if self.network_mode == "host" and mode == "Raeuber & Bulle":
+        if self.network_mode == "host" and mode in ("Raeuber & Bulle", "Insignien-Diebstahl"):
             msg = QMessageBox(self)
             self._style_dialog(msg)
             msg.setWindowTitle("LAN")
             msg.setText("LAN geht aktuell nur fuer Rennen.")
-            msg.setInformativeText("Raeuber & Bulle kommt spaeter dazu.")
+            msg.setInformativeText("Battle-Modi kommen spaeter im LAN dazu.")
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
             mode = "Rennen"
@@ -1846,11 +1878,15 @@ class MenuWidget(QWidget):
         self.selected_mode = mode
         if mode == "Raeuber & Bulle":
             self.selected_map = "Raeuber & Bulle"
-        elif self.selected_map == "Raeuber & Bulle":
+        elif mode == "Insignien-Diebstahl":
+            self.selected_map = "Insignien-Diebstahl"
+        elif self.selected_map in self._battle_maps:
             self.selected_map = self.available_maps[0]
         self.map_panel.setVisible(mode == "Rennen")
         self.laps_combo.setVisible(mode == "Rennen")
         self.rb_setup_panel.setVisible(mode == "Raeuber & Bulle")
+        if hasattr(self, "insignia_setup_panel"):
+            self.insignia_setup_panel.setVisible(mode == "Insignien-Diebstahl")
         self._refresh_garage()
         self.stack.setCurrentWidget(self.garage_screen)
 
@@ -1887,6 +1923,8 @@ class MenuWidget(QWidget):
         self.laps_combo.setVisible(self.selected_mode == "Rennen")
         if hasattr(self, "rb_setup_panel"):
             self.rb_setup_panel.setVisible(self.selected_mode == "Raeuber & Bulle")
+        if hasattr(self, "insignia_setup_panel"):
+            self.insignia_setup_panel.setVisible(self.selected_mode == "Insignien-Diebstahl")
         for slot, (preview, title) in enumerate(self.previews):
             preview.set_car(self.slot_colors[slot], self.slot_styles[slot], self.slot_characters[slot])
             visible = slot < max(1, self.selected_players)
@@ -1923,6 +1961,8 @@ class MenuWidget(QWidget):
                 self._prepare_team_screen()
                 self.stack.setCurrentWidget(self.team_screen)
                 return
+            self._finish_start(None)
+        elif mode == "Insignien-Diebstahl":
             self._finish_start(None)
         else:
             self._finish_start(None)
@@ -1970,6 +2010,11 @@ class MenuWidget(QWidget):
             laps = 0
             rb_rounds = int(self.rb_rounds_spin.value())
             rb_round_time = int(self.rb_time_combo.currentText())
+        elif mode == "Insignien-Diebstahl":
+            map_name = "Insignien-Diebstahl"
+            laps = 0
+            rb_rounds = None
+            rb_round_time = int(self.insignia_time_combo.currentText())
         else:
             map_name = self.selected_map
             laps = int(self.laps_combo.currentText())

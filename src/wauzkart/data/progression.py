@@ -53,6 +53,7 @@ BADGE_DEFS = [
     {"id": "rb_win_rot", "name": "Rot gewinnt", "desc": "Gewinne ein Raeuber & Bulle Match als Team Rot."},
     {"id": "rb_free_someone", "name": "Befreiungsaktion", "desc": "Befreie Raeuber mit dem Knopf."},
     {"id": "rb_catch_robber", "name": "Festnahme", "desc": "Fange einen Raeuber als Bulle."},
+    {"id": "insignia_thief", "name": "Insignien-Dieb", "desc": "Gewinne ein Insignien-Diebstahl Match."},
     {"id": "ten_races", "name": "Veteran", "desc": "Beende 10 Rennen/Matches."},
     {"id": "level_5", "name": "Level 5", "desc": "Erreiche Level 5."},
 
@@ -424,6 +425,9 @@ class RaceLogger:
                 pdata["rb_color_team"] = getattr(pl, "rb_color_team", None)
                 pdata["rb_role"] = getattr(pl, "rb_role", None)
                 pdata["rb_winner_team"] = getattr(pl, "rb_winner_team", None)
+            if map_name == "Insignien-Diebstahl":
+                pdata["insignia_score"] = float(getattr(pl, "insignia_score", 0.0) or 0.0)
+                pdata["insignia_winner"] = bool(getattr(pl, "insignia_winner", False))
             data['players'].append(pdata)
         races = RaceLogger._load_races_file()
         races.append(data)
