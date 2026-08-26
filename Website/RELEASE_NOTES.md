@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.26
+# Wauz Kart v1.0.27
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -28,6 +28,9 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Menschliche Spieler-Items feuern nicht mehr automatisch
 - Update-Check funktioniert auch, wenn die GitHub-API gerade limitiert ist
 - Updates laden jetzt immer den Installer der exakt gefundenen Release-Version
+- Erster Spielstart zeigt Nutzungsbedingungen und AGB mit Zustimmung
+- Update-Fehler oeffnen einen Hilfe-Dialog mit Hilfe-Seite
+- Website hat neue Hilfe- und AGB-Seiten
 - Linux DEB-Installer fuer Systeme ohne AppImage-Support
 - Linux-Build fix fuer PyOpenGL Platform-Module wie `OpenGL.platform.egl`
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect

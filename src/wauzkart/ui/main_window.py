@@ -7,11 +7,13 @@ import urllib.request
 from .. import __version__
 from ..audio.sound import wauz_audio
 from ..core.updates import check_for_update
+from ..data.legal import accept_terms, has_accepted_terms
 from ..data.progression import RaceLogger, badge_store, global_progression, unlock_badge
 from ..game.entities import Player
 from ..network.lan import LAN_PORT, LanClient, LanServer
 from ..paths import ASSETS_DIR, _wauz_api
 from .history import HistoryWidget
+from .legal import TermsDialog, UpdateHelpDialog
 from .menu import MenuWidget
 from .race_screen import RaceScreen
 from .replay_screen import ReplayScreen
@@ -135,7 +137,7 @@ class MainWindow(QMainWindow):
 
         self._show_menu()
         self._position_version_label()
-        QTimer.singleShot(1200, self._check_for_updates)
+        QTimer.singleShot(350, self._first_start_flow)
 
     def resizeEvent(self, event):
         try:
@@ -203,6 +205,15 @@ class MainWindow(QMainWindow):
                 self._update_signal.found.emit(update)
 
         threading.Thread(target=run_check, daemon=True).start()
+
+    def _first_start_flow(self):
+        if not has_accepted_terms():
+            dlg = TermsDialog(self)
+            if dlg.exec_() != QDialog.Accepted:
+                QApplication.quit()
+                return
+            accept_terms()
+        QTimer.singleShot(850, self._check_for_updates)
 
     def _show_update_dialog(self, update):
         if not update:
@@ -279,13 +290,7 @@ class MainWindow(QMainWindow):
         if self._update_dialog is not None:
             self._update_dialog.close()
             self._update_dialog = None
-        msg = QMessageBox(self)
-        msg.setWindowTitle("Update")
-        msg.setIcon(QMessageBox.Warning)
-        msg.setText("Update konnte nicht installiert werden.")
-        msg.setInformativeText(str(text or "Unbekannter Fehler."))
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
+        UpdateHelpDialog(str(text or "Unbekannter Fehler."), self).exec_()
 
     def _start_update_installer(self, target_text):
         target = Path(target_text)

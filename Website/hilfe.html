@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Wauz Kart Hilfe fuer Installation, Updates, Linux, Windows, macOS und LAN.">
+    <title>Hilfe - Wauz Kart</title>
+    <link rel="icon" href="assets/icon-small.webp">
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <header class="subhero help-hero" id="top">
+      <nav class="nav" aria-label="Hauptnavigation">
+        <a class="brand" href="/">
+          <img src="assets/icon-small.webp" alt="">
+          <span>Wauz Kart</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Start</a>
+          <a href="/garage">Garage</a>
+          <a href="/wiki">Wiki</a>
+          <a href="/hilfe">Hilfe</a>
+          <a href="/agb">AGB</a>
+          <a href="/#download">Download</a>
+        </div>
+      </nav>
+
+      <div class="subhero-content">
+        <p class="eyebrow">Hilfe</p>
+        <h1>Update- und Installationshilfe</h1>
+        <p class="lead">Schnelle Hilfe, wenn Download, Installation, Audio, OpenGL oder LAN nicht direkt funktionieren.</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="band wiki-layout">
+        <aside class="wiki-index" aria-label="Hilfe Inhalt">
+          <a href="#update">Update</a>
+          <a href="#windows">Windows</a>
+          <a href="#linux">Linux</a>
+          <a href="#macos">macOS</a>
+          <a href="#lan">LAN</a>
+          <a href="#daten">Daten</a>
+        </aside>
+
+        <div class="wiki-content">
+          <section id="update" class="wiki-panel">
+            <p class="eyebrow">Update</p>
+            <h2>Wenn das automatische Update fehlschlaegt</h2>
+            <p>Oeffne die Download-Sektion, lade den passenden Installer erneut und starte ihn manuell. Deine Fortschrittsdaten bleiben im Benutzerprofil gespeichert.</p>
+            <p>Wenn GitHub kurz limitiert oder langsam ist, warte ein paar Minuten und starte Wauz Kart erneut. Neue Versionen laden einen tag-genauen Installer der gefundenen Release.</p>
+          </section>
+
+          <section id="windows" class="wiki-panel">
+            <p class="eyebrow">Windows</p>
+            <h2>Windows-Installer</h2>
+            <p>Lade <code>install-wauzkart-windows.exe</code>. Wenn Windows warnt, bestaetige nur Installer, die von der offiziellen GitHub-Release-Seite oder dieser Website kommen.</p>
+            <p>Falls ein Update nicht kopieren kann, schliesse alle Wauz-Kart-Fenster und starte den Installer erneut.</p>
+          </section>
+
+          <section id="linux" class="wiki-panel">
+            <p class="eyebrow">Linux</p>
+            <h2>Linux-SH-Installer</h2>
+            <p>Lade <code>install-wauzkart-linux.sh</code>, mache die Datei ausfuehrbar und starte sie. Der Installer darf sudo fuer Systempakete nutzen, das Spiel selbst soll danach ohne sudo gestartet werden.</p>
+            <p>Bei Audio-Problemen pruefe PulseAudio/PipeWire und GStreamer-Pakete. Bei OpenGL-Problemen pruefe Grafiktreiber und EGL/GLX-Pakete.</p>
+          </section>
+
+          <section id="macos" class="wiki-panel">
+            <p class="eyebrow">macOS</p>
+            <h2>macOS-DMG</h2>
+            <p>Lade <code>wauzkart-macos.dmg</code>, oeffne die Datei und installiere die App. Bei Sicherheitswarnungen oeffne sie ueber Systemeinstellungen oder Rechtsklick/Oeffnen.</p>
+          </section>
+
+          <section id="lan" class="wiki-panel">
+            <p class="eyebrow">LAN</p>
+            <h2>LAN-Verbindung</h2>
+            <p>Host und Client muessen im selben Netzwerk sein. Wenn automatische Suche nichts findet, gib die Host-IP manuell ein und erlaube Wauz Kart in der Firewall.</p>
+            <p>Ports: TCP <code>27711</code> fuer Rennen und UDP <code>27712</code> fuer Host-Suche.</p>
+          </section>
+
+          <section id="daten" class="wiki-panel">
+            <p class="eyebrow">Daten</p>
+            <h2>Spielstaende</h2>
+            <p>Scores, Abzeichen, Rennen und AGB-Zustimmung liegen im Benutzerprofil, nicht im Assets-Ordner. Unter Windows ist das normalerweise <code>AppData/Roaming/Wauzkart</code>.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

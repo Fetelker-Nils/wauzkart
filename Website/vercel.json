@@ -19,6 +19,14 @@
       "dest": "/wiki.html"
     },
     {
+      "src": "/hilfe",
+      "dest": "/hilfe.html"
+    },
+    {
+      "src": "/agb",
+      "dest": "/agb.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
     }

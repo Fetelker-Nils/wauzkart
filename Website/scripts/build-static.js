@@ -38,6 +38,8 @@ for (const file of [
   "index.html",
   "garage.html",
   "wiki.html",
+  "hilfe.html",
+  "agb.html",
   "style.css",
   "script.js",
   "robots.txt",

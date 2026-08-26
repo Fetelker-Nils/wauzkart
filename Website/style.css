@@ -759,6 +759,12 @@ meter::-webkit-meter-optimum-value {
   align-items: start;
 }
 
+.legal-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
 .wiki-index {
   position: sticky;
   top: 16px;
