@@ -39,8 +39,12 @@ for (const file of [
   "index.html",
   "garage.html",
   "wiki.html",
+  "hilfe.html",
+  "agb.html",
   "style.css",
   "script.js",
+  "robots.txt",
+  "sitemap.xml",
   "README.md",
   "RELEASE_NOTES.md"
 ]) {

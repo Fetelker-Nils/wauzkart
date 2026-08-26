@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.27
+# Wauz Kart v1.0.28
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -31,6 +31,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Erster Spielstart zeigt Nutzungsbedingungen und AGB mit Zustimmung
 - Update-Fehler oeffnen einen Hilfe-Dialog mit Hilfe-Seite
 - Website hat neue Hilfe- und AGB-Seiten
+- Root-Vercel-Build liefert Hilfe, AGB, Robots und Sitemap aus
 - Linux DEB-Installer fuer Systeme ohne AppImage-Support
 - Linux-Build fix fuer PyOpenGL Platform-Module wie `OpenGL.platform.egl`
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect
