@@ -1125,15 +1125,7 @@ class RaceWidget(QOpenGLWidget):
         _draw_ground(max(140, int(outer_r * 3.0)))
         if self.map_config.get("type") == "open_square":
             half = float(outer_r)
-            _gl_box_lit(-half, -0.01, -half, half, 0.02, half, (0.28, 0.28, 0.27))
-            for x1, z1, x2, z2 in [
-                (-half, -half, half, -half), (half, -half, half, half),
-                (half, half, -half, half), (-half, half, -half, -half),
-            ]:
-                glColor3f(0.86, 0.86, 0.78)
-                glBegin(GL_LINES)
-                glVertex3f(x1, 0.06, z1); glVertex3f(x2, 0.06, z2)
-                glEnd()
+            self._draw_open_square_arena(half)
         else:
             _draw_track_ribbon(outer_mod, inner_mod, outer_r, inner_r)
             _draw_track_decoration(outer_mod, outer_r)
@@ -1183,6 +1175,7 @@ class RaceWidget(QOpenGLWidget):
             glPushMatrix()
             glTranslatef(ox, 0.02, oz)
             _gl_box_lit(-w/2, 0.0, -l/2, w/2, h, l/2, col)
+            self._draw_obstacle_detail(w, l, h)
             glPopMatrix()
 
         if self.map_name == "Raeuber & Bulle":
@@ -1190,23 +1183,95 @@ class RaceWidget(QOpenGLWidget):
         if self.insignia_mode:
             self._draw_insignia()
 
+    def _draw_open_square_arena(self, half):
+        tile = 18.0
+        start = -half
+        end = half
+        steps = int((end - start) / tile) + 1
+
+        glBegin(GL_QUADS)
+        for ix in range(steps):
+            x1 = start + ix * tile
+            x2 = min(end, x1 + tile)
+            for iz in range(steps):
+                z1 = start + iz * tile
+                z2 = min(end, z1 + tile)
+                tone = 0.25 + 0.025 * math.sin(ix * 1.7 + iz * 2.3)
+                if (ix + iz) % 2 == 0:
+                    tone += 0.025
+                glColor3f(tone, tone, tone * 0.96)
+                glVertex3f(x1, 0.018, z1)
+                glVertex3f(x2, 0.018, z1)
+                glVertex3f(x2, 0.018, z2)
+                glVertex3f(x1, 0.018, z2)
+        glEnd()
+
+        glColor3f(0.10, 0.10, 0.095)
+        glBegin(GL_LINES)
+        x = start
+        while x <= end + 0.1:
+            glVertex3f(x, 0.035, start)
+            glVertex3f(x, 0.035, end)
+            x += tile
+        z = start
+        while z <= end + 0.1:
+            glVertex3f(start, 0.036, z)
+            glVertex3f(end, 0.036, z)
+            z += tile
+        glEnd()
+
+        gold = (0.95, 0.64, 0.08)
+        dark = (0.06, 0.07, 0.08)
+        _gl_box_lit(-half, 0.035, -half, half, 0.10, -half + 1.0, gold)
+        _gl_box_lit(-half, 0.035, half - 1.0, half, 0.10, half, gold)
+        _gl_box_lit(-half, 0.035, -half, -half + 1.0, 0.10, half, gold)
+        _gl_box_lit(half - 1.0, 0.035, -half, half, 0.10, half, gold)
+
+        for offset in (-10.0, 10.0):
+            _gl_box_lit(-half * 0.42, 0.04, offset - 0.28, half * 0.42, 0.08, offset + 0.28, gold)
+            _gl_box_lit(offset - 0.28, 0.04, -half * 0.42, offset + 0.28, 0.08, half * 0.42, gold)
+
+        _gl_box_lit(-3.2, 0.045, -3.2, 3.2, 0.12, 3.2, dark)
+        _gl_box_lit(-2.55, 0.13, -0.32, 2.55, 0.22, 0.32, gold)
+        _gl_box_lit(-0.32, 0.13, -2.55, 0.32, 0.22, 2.55, gold)
+
+    def _draw_obstacle_detail(self, w, l, h):
+        cap = (0.88, 0.78, 0.52) if self.insignia_mode else (0.74, 0.74, 0.68)
+        _gl_box_lit(-w / 2 - 0.04, h + 0.01, -l / 2 - 0.04, w / 2 + 0.04, h + 0.13, l / 2 + 0.04, cap)
+        _gl_box_lit(-w / 2 - 0.06, 0.03, -l / 2 - 0.06, w / 2 + 0.06, 0.09, -l / 2 + 0.10, (0.08, 0.08, 0.08))
+        _gl_box_lit(-w / 2 - 0.06, 0.03, l / 2 - 0.10, w / 2 + 0.06, 0.09, l / 2 + 0.06, (0.08, 0.08, 0.08))
+        _gl_box_lit(-w / 2 - 0.06, 0.03, -l / 2 - 0.06, -w / 2 + 0.10, 0.09, l / 2 + 0.06, (0.08, 0.08, 0.08))
+        _gl_box_lit(w / 2 - 0.10, 0.03, -l / 2 - 0.06, w / 2 + 0.06, 0.09, l / 2 + 0.06, (0.08, 0.08, 0.08))
+
     def _draw_insignia(self):
         holder = self._insignia_holder_player()
         if holder is not None:
             x, y, z = holder.pos[0], holder.pos[1] + 2.7, holder.pos[2]
         else:
             x, y, z = self.insignia_pos[0], 1.1, self.insignia_pos[1]
+            glPushMatrix()
+            glTranslatef(float(x), 0.05, float(z))
+            _gl_box_lit(-1.65, 0.0, -1.65, 1.65, 0.16, 1.65, (0.07, 0.08, 0.09))
+            _gl_box_lit(-1.28, 0.16, -1.28, 1.28, 0.26, 1.28, (0.92, 0.62, 0.08))
+            glPopMatrix()
 
         spin = (time.time() * 120.0) % 360.0
         glPushMatrix()
         glTranslatef(float(x), float(y), float(z))
+        glColor3f(1.0, 0.86, 0.18)
+        glBegin(GL_LINE_LOOP)
+        for i in range(32):
+            a = math.tau * i / 32
+            glVertex3f(math.cos(a) * 1.55, -0.42, math.sin(a) * 1.55)
+        glEnd()
         glRotatef(spin, 0, 1, 0)
-        _gl_box_lit(-0.95, -0.08, -0.18, 0.95, 0.08, 0.18, (1.0, 0.74, 0.05))
-        _gl_box_lit(-0.18, -0.08, -0.95, 0.18, 0.08, 0.95, (1.0, 0.74, 0.05))
+        _gl_box_lit(-1.10, -0.09, -0.20, 1.10, 0.09, 0.20, (1.0, 0.70, 0.03))
+        _gl_box_lit(-0.20, -0.09, -1.10, 0.20, 0.09, 1.10, (1.0, 0.70, 0.03))
         glRotatef(45, 0, 1, 0)
-        _gl_box_lit(-0.70, -0.07, -0.16, 0.70, 0.07, 0.16, (1.0, 0.90, 0.24))
-        _gl_box_lit(-0.16, -0.07, -0.70, 0.16, 0.07, 0.70, (1.0, 0.90, 0.24))
-        _gl_box_lit(-0.30, -0.16, -0.30, 0.30, 0.16, 0.30, (0.95, 0.55, 0.02))
+        _gl_box_lit(-0.82, -0.08, -0.17, 0.82, 0.08, 0.17, (1.0, 0.92, 0.28))
+        _gl_box_lit(-0.17, -0.08, -0.82, 0.17, 0.08, 0.82, (1.0, 0.92, 0.28))
+        _gl_box_lit(-0.36, -0.20, -0.36, 0.36, 0.20, 0.36, (0.96, 0.50, 0.02))
+        _gl_box_lit(-0.18, -0.26, -0.18, 0.18, 0.26, 0.18, (1.0, 0.98, 0.48))
         glPopMatrix()
 
     def _draw_rb_release_button(self):
