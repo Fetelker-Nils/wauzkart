@@ -309,8 +309,8 @@ class RaceWidget(QOpenGLWidget):
         self.powerups_enabled = (map_name != "Raeuber & Bulle")
 
         self.items = []
-        self.powerup_spawn_interval = 2.5
-        self.max_powerups = (22 if self.insignia_mode else 16) if self.powerups_enabled else 0
+        self.powerup_spawn_interval = 5.5 if self.insignia_mode else 2.5
+        self.max_powerups = (7 if self.insignia_mode else 16) if self.powerups_enabled else 0
         self.next_powerup_spawn_time = (time.time() + 1.0) if self.powerups_enabled else float("inf")
 
         # Item-Boxen (feste Pltze) + initiale Power-ups
@@ -320,7 +320,7 @@ class RaceWidget(QOpenGLWidget):
         if self.powerups_enabled:
             self._init_item_boxes()
             self.item_box_item_pool = ["abknaller", "turbo", "wirbler", "schild", "frost", "oelspur"]
-            for _ in range(14 if self.insignia_mode else 10):
+            for _ in range(3 if self.insignia_mode else 10):
                 self._spawn_random_powerup()
 
         self.on_race_over = None  # callback  MainWindow
@@ -1607,9 +1607,10 @@ class RaceWidget(QOpenGLWidget):
         now = time.time()
         holder = self._insignia_holder_player()
         half = float(self.map_config.get("outer_base", self.outer_r))
-        margin = 14.0
+        margin = 18.0
+        is_holder = holder is pl
 
-        if holder is pl:
+        if is_holder:
             nearest, dist = self._get_nearest_other_car(pl)
             if nearest is not None and dist < 55.0:
                 dx = pl.pos[0] - nearest.pos[0]
@@ -1626,10 +1627,25 @@ class RaceWidget(QOpenGLWidget):
         else:
             tx, tz = self.insignia_pos[0], self.insignia_pos[1]
 
-        if pl.pending_item is None and (now - pl.last_box_collected_time) >= 5.0:
+        if (not is_holder) and pl.pending_item is None and holder is None and (now - pl.last_box_collected_time) >= 6.5:
             nearest_box, box_dist = self._get_nearest_available_item_box(pl.pos, now)
-            if nearest_box is not None and box_dist < 32.0:
+            if nearest_box is not None and box_dist < 24.0:
                 tx, tz = nearest_box.pos[0], nearest_box.pos[2]
+
+        avoid_x = 0.0
+        avoid_z = 0.0
+        for other in self.players:
+            if other is pl or other.finished:
+                continue
+            dx_other = other.pos[0] - pl.pos[0]
+            dz_other = other.pos[2] - pl.pos[2]
+            dist_other = math.sqrt(dx_other * dx_other + dz_other * dz_other)
+            if 0.01 < dist_other < 5.0 and (is_holder or other is not holder):
+                strength = (5.0 - dist_other) / 5.0
+                avoid_x -= (dx_other / dist_other) * strength * 6.0
+                avoid_z -= (dz_other / dist_other) * strength * 6.0
+        tx += avoid_x
+        tz += avoid_z
 
         tx = _clamp(tx, -half + margin, half - margin)
         tz = _clamp(tz, -half + margin, half - margin)
@@ -1641,16 +1657,18 @@ class RaceWidget(QOpenGLWidget):
             diff -= 360
 
         d = pl.ai_diff
-        speed_factor = 0.86 if holder is pl else 0.94
+        speed_factor = 0.74 if is_holder else 0.88
         if abs(diff) > 70:
-            speed_factor *= 0.55
+            speed_factor *= 0.48
+        elif abs(diff) > 38:
+            speed_factor *= 0.72
         target_speed = pl.max_speed * d.get("speed", 1.0) * speed_factor
         if pl.velocity < target_speed:
             pl.velocity = min(pl.velocity + pl.acc * dt * 1.15, target_speed)
         else:
             pl.velocity = max(target_speed, pl.velocity - pl.friction * dt * 0.8)
         if abs(pl.velocity) > 0.2:
-            steer = min(1.0, abs(diff) / 20.0) * d.get("sharp", 1.0)
+            steer = min(1.0, abs(diff) / 24.0) * min(1.15, d.get("sharp", 1.0))
             pl.rot += math.copysign(pl.turn_speed * dt * steer, diff)
         self._physics(pl, dt, abs(pl.velocity) > 0.2)
 
@@ -1810,8 +1828,6 @@ class RaceWidget(QOpenGLWidget):
                 pl.velocity *= 0.82
                 return
             if self._avoid_obstacles_ai(pl, dt):
-                return
-            if self._avoid_cars_ai(pl, dt):
                 return
             self._update_insignia_ai(pl, dt)
             return
