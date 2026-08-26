@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.31
+# Wauz Kart v1.0.32
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -36,6 +36,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Neuer Modus `Insignien-Diebstahl` mit Arena-Map, goldener Insigne, Stehlen durch Treffer/Kontakt und Score-Ende
 - Insignien-Diebstahl hat weniger Power-ups, weniger Item-Boxen und eine ruhigere Arena-KI
 - Insignien-Arena grafisch verbessert mit Asphaltplatten, Randlichtern, goldenen Battle-Markierungen und besserer Insigne
+- Update-Check robuster gemacht, wenn GitHub-API oder Latest-Redirect gecacht/limitiert sind
 - Linux-Build fix fuer PyOpenGL Platform-Module wie `OpenGL.platform.egl`
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect
 - Linux-Starter schuetzt vor `sudo wauzkart`, damit Audio ueber die normale Benutzer-Sitzung laeuft
