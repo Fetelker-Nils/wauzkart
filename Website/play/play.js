@@ -2,246 +2,240 @@ const canvas = document.querySelector("#game");
 const ctx = canvas.getContext("2d");
 const overlay = document.querySelector("#overlay");
 const startButton = document.querySelector("#start-button");
+const overlayTitle = overlay.querySelector("strong");
+const overlayText = overlay.querySelector(".overlay-text");
 const hudScore = document.querySelector("#hud-score");
 const hudItem = document.querySelector("#hud-item");
 const hudTime = document.querySelector("#hud-time");
 
 const keys = new Set();
-const center = { x: 640, y: 360 };
-const track = { rx: 430, ry: 210, width: 92, startAngle: Math.PI / 2 };
+const track = {
+  cx: 640,
+  cy: 360,
+  rx: 430,
+  ry: 210,
+  width: 94,
+  start: 0,
+};
 const totalLaps = 3;
 const characters = [
   { id: "wauz", name: "Wauz", color: "#36d8ff" },
   { id: "mauz", name: "Mauz", color: "#f3c744" },
 ];
-const carTypes = [
-  { id: "sport", name: "Sport", color: "#ef3e32", max: 420, accel: 760, turn: 3.45 },
-  { id: "rally", name: "Rally", color: "#4ade80", max: 385, accel: 700, turn: 3.9 },
+const cars = [
+  { id: "sport", name: "Sport", color: "#ef3e32", max: 0.225, accel: 0.155, turn: 76 },
+  { id: "rally", name: "Rally", color: "#4ade80", max: 0.205, accel: 0.145, turn: 96 },
 ];
-const itemBoxes = [
-  { angle: 0.48, wait: 0 },
-  { angle: 2.72, wait: 0 },
-  { angle: 4.28, wait: 0 },
+const boxes = [
+  { progress: 0.16, lane: -18, wait: 0 },
+  { progress: 0.41, lane: 20, wait: 0 },
+  { progress: 0.68, lane: -10, wait: 0 },
 ];
 
 let selectedCharacter = 0;
 let selectedCar = 0;
 let running = false;
-let lastTime = 0;
-let winnerText = "";
-let heldItem = "";
 let raceTime = 0;
+let lastFrame = 0;
+let heldItem = "";
 
-const player = makeRacer("DU", 0, 0, true);
-const ai = makeRacer("KI", 1, 1, false);
+const player = makeRacer("DU", true, 0, 0, -24);
+const ai = makeRacer("KI", false, 1, 1, 24);
 const racers = [player, ai];
 
-function makeRacer(name, characterIndex, carIndex, human) {
-  const p = pointOnTrack(track.startAngle + (human ? 0.015 : -0.03));
+function makeRacer(name, human, characterIndex, carIndex, lane) {
   return {
     name,
+    human,
     characterIndex,
     carIndex,
-    human,
-    x: p.x + (human ? -22 : 22),
-    y: p.y + (human ? 18 : -18),
-    rot: -Math.PI / 2,
+    progress: track.start,
+    previousProgress: track.start,
+    lane,
+    targetLane: lane,
     speed: 0,
     lap: 0,
-    progress: 0,
-    lastProgress: 0,
     place: 1,
     finished: false,
     finishTime: 0,
     boost: 0,
     stun: 0,
+    wobble: 0,
+  };
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function wrapProgress(value) {
+  let next = value % 1;
+  if (next < 0) next += 1;
+  return next;
+}
+
+function trackPoint(progress, lane = 0) {
+  const angle = (progress - track.start) * Math.PI * 2 - Math.PI / 2;
+  const x = track.cx + Math.cos(angle) * track.rx;
+  const y = track.cy + Math.sin(angle) * track.ry;
+  const tx = -Math.sin(angle) * track.rx;
+  const ty = Math.cos(angle) * track.ry;
+  const len = Math.hypot(tx, ty) || 1;
+  const nx = -ty / len;
+  const ny = tx / len;
+  return {
+    x: x + nx * lane,
+    y: y + ny * lane,
+    rot: Math.atan2(ty, tx),
   };
 }
 
 function resetRacer(racer, lane) {
-  const p = pointOnTrack(track.startAngle + lane * 0.01);
-  racer.x = p.x + lane * 26;
-  racer.y = p.y - lane * 18;
-  racer.rot = -Math.PI / 2;
+  racer.progress = track.start;
+  racer.previousProgress = track.start;
+  racer.lane = lane;
+  racer.targetLane = lane;
   racer.speed = 0;
   racer.lap = 0;
-  racer.progress = 0;
-  racer.lastProgress = 0;
   racer.place = 1;
   racer.finished = false;
   racer.finishTime = 0;
   racer.boost = 0;
   racer.stun = 0;
+  racer.wobble = 0;
 }
 
 function resetGame() {
   running = true;
   raceTime = 0;
   heldItem = "";
-  winnerText = "";
+  overlayTitle.textContent = "WAUZ KART RENNEN";
+  overlayText.textContent = "3 Runden fahren, KI schlagen, Items nutzen.";
+  startButton.textContent = "SPIEL STARTEN";
   player.characterIndex = selectedCharacter;
   player.carIndex = selectedCar;
   ai.characterIndex = selectedCharacter === 0 ? 1 : 0;
   ai.carIndex = selectedCar === 0 ? 1 : 0;
-  resetRacer(player, -0.45);
-  resetRacer(ai, 0.45);
-  itemBoxes.forEach((box) => {
+  resetRacer(player, -26);
+  resetRacer(ai, 26);
+  boxes.forEach((box) => {
     box.wait = 0;
   });
   overlay.classList.add("hidden");
   canvas.focus();
 }
 
-function clamp(v, min, max) {
-  return Math.max(min, Math.min(max, v));
+function finishRacer(racer) {
+  if (racer.finished) return;
+  racer.finished = true;
+  racer.finishTime = raceTime;
+  racer.speed = Math.min(racer.speed, 0.08);
 }
 
-function pointOnTrack(angle, lane = 0) {
-  const rx = track.rx + lane;
-  const ry = track.ry + lane * 0.48;
-  return {
-    x: center.x + Math.cos(angle) * rx,
-    y: center.y + Math.sin(angle) * ry,
-  };
-}
-
-function nearestTrackAngle(x, y) {
-  return Math.atan2((y - center.y) / track.ry, (x - center.x) / track.rx);
-}
-
-function normalizedProgress(angle) {
-  let p = (angle - track.startAngle) / (Math.PI * 2);
-  p = 1 - p;
-  while (p < 0) p += 1;
-  while (p >= 1) p -= 1;
-  return p;
-}
-
-function angleDiff(a, b) {
-  let diff = a - b;
-  while (diff > Math.PI) diff -= Math.PI * 2;
-  while (diff < -Math.PI) diff += Math.PI * 2;
-  return diff;
-}
-
-function turnToward(racer, target, amount) {
-  const diff = angleDiff(target, racer.rot);
-  racer.rot += clamp(diff, -amount, amount);
-  return Math.abs(diff);
+function updateLap(racer) {
+  if (racer.finished) return;
+  if (racer.previousProgress > 0.92 && racer.progress < 0.08 && racer.speed > 0.02) {
+    racer.lap += 1;
+    if (racer.lap >= totalLaps) {
+      finishRacer(racer);
+    }
+  }
+  racer.previousProgress = racer.progress;
 }
 
 function updatePlayer(dt) {
-  if (player.finished) {
-    player.speed *= 0.985;
-    return;
-  }
-  if (player.stun > 0) {
-    player.stun -= dt;
-    player.speed *= 0.92;
-    return;
-  }
-  const spec = carTypes[player.carIndex];
+  const spec = cars[player.carIndex];
   const gas = keys.has("ArrowUp") || keys.has("w") || keys.has("W");
   const brake = keys.has("ArrowDown") || keys.has("s") || keys.has("S");
   const left = keys.has("ArrowLeft") || keys.has("a") || keys.has("A");
   const right = keys.has("ArrowRight") || keys.has("d") || keys.has("D");
-  const maxSpeed = spec.max + (player.boost > 0 ? 120 : 0);
-  if (gas) player.speed += spec.accel * dt;
-  if (brake) player.speed -= spec.accel * 0.72 * dt;
-  if (!gas && !brake) player.speed *= 0.985;
-  player.speed = clamp(player.speed, -120, maxSpeed);
-  const steer = spec.turn * dt * clamp(Math.abs(player.speed) / 260, 0.25, 1);
-  if (left) player.rot -= player.speed >= 0 ? steer : -steer;
-  if (right) player.rot += player.speed >= 0 ? steer : -steer;
+
+  if (player.finished) {
+    player.speed = lerp(player.speed, 0.09, dt * 1.4);
+  } else if (player.stun > 0) {
+    player.stun -= dt;
+    player.speed *= 0.94;
+    player.wobble += dt * 18;
+  } else {
+    if (gas) player.speed += spec.accel * dt;
+    if (brake) player.speed -= spec.accel * 1.35 * dt;
+    if (!gas && !brake) player.speed *= Math.pow(0.9, dt);
+    if (left) player.targetLane -= spec.turn * dt;
+    if (right) player.targetLane += spec.turn * dt;
+  }
+
+  const speedLimit = spec.max + (player.boost > 0 ? 0.07 : 0);
+  player.speed = clamp(player.speed, -0.045, speedLimit);
+  player.targetLane = clamp(player.targetLane, -track.width * 0.35, track.width * 0.35);
+  player.lane = lerp(player.lane, player.targetLane, clamp(dt * 8, 0, 1));
 }
 
 function updateAi(dt) {
+  const spec = cars[ai.carIndex];
   if (ai.finished) {
-    ai.speed *= 0.985;
-    return;
+    ai.speed = lerp(ai.speed, 0.085, dt * 1.3);
+  } else if (ai.stun > 0) {
+    ai.stun -= dt;
+    ai.speed *= 0.93;
+    ai.wobble += dt * 17;
+  } else {
+    const laneWave = Math.sin(raceTime * 1.15 + ai.progress * 8) * 18;
+    const catchUp = player.lap + player.progress > ai.lap + ai.progress + 0.12 ? 0.018 : 0;
+    const leadSlow = ai.lap + ai.progress > player.lap + player.progress + 0.1 ? 0.018 : 0;
+    ai.targetLane = clamp(laneWave, -track.width * 0.3, track.width * 0.3);
+    ai.lane = lerp(ai.lane, ai.targetLane, clamp(dt * 3.5, 0, 1));
+    ai.speed = lerp(ai.speed, spec.max * 0.88 + catchUp - leadSlow, dt * 1.7);
   }
-  const spec = carTypes[ai.carIndex];
-  const targetProgress = (ai.progress + 0.045) % 1;
-  const targetAngle = track.startAngle - targetProgress * Math.PI * 2;
-  const lane = Math.sin(raceTime * 1.4) * 18;
-  const target = pointOnTrack(targetAngle, lane);
-  const wantedRot = Math.atan2(target.y - ai.y, target.x - ai.x);
-  const diff = turnToward(ai, wantedRot, spec.turn * 0.9 * dt);
-  const targetSpeed = spec.max * (diff > 1.0 ? 0.58 : 0.92);
-  ai.speed += spec.accel * 0.78 * dt;
-  ai.speed = clamp(ai.speed, 0, targetSpeed);
-}
-
-function keepOnTrack(racer) {
-  const a = nearestTrackAngle(racer.x, racer.y);
-  const p = pointOnTrack(a);
-  const dx = racer.x - p.x;
-  const dy = racer.y - p.y;
-  const d = Math.hypot(dx, dy);
-  const half = track.width * 0.5;
-  if (d <= half) return;
-  const nx = dx / Math.max(0.001, d);
-  const ny = dy / Math.max(0.001, d);
-  racer.x = p.x + nx * half;
-  racer.y = p.y + ny * half;
-  racer.speed *= 0.78;
+  ai.speed = clamp(ai.speed, 0, spec.max * 0.98);
 }
 
 function moveRacer(racer, dt) {
   racer.boost = Math.max(0, racer.boost - dt);
-  racer.x += Math.cos(racer.rot) * racer.speed * dt;
-  racer.y += Math.sin(racer.rot) * racer.speed * dt;
-  keepOnTrack(racer);
-  updateProgress(racer);
-}
-
-function updateProgress(racer) {
-  const angle = nearestTrackAngle(racer.x, racer.y);
-  const p = normalizedProgress(angle);
-  if (racer.lastProgress > 0.82 && p < 0.18 && racer.speed > 80 && !racer.finished) {
-    racer.lap += 1;
-    if (racer.lap >= totalLaps) {
-      racer.finished = true;
-      racer.finishTime = raceTime;
-      racer.speed *= 0.55;
-    }
-  }
-  racer.lastProgress = p;
-  racer.progress = p;
+  racer.previousProgress = racer.progress;
+  racer.progress = wrapProgress(racer.progress + racer.speed * dt);
+  updateLap(racer);
 }
 
 function updateItems(dt) {
-  itemBoxes.forEach((box) => {
+  boxes.forEach((box) => {
     box.wait = Math.max(0, box.wait - dt);
-    const pos = pointOnTrack(box.angle, 4);
-    if (box.wait <= 0 && !heldItem && distance(player, pos) < 34) {
-      heldItem = Math.random() > 0.42 ? "TURBO" : "SCHOCK";
-      box.wait = 7;
+    if (heldItem || box.wait > 0 || player.finished) return;
+    const distance = Math.abs(player.progress - box.progress);
+    const wrappedDistance = Math.min(distance, 1 - distance);
+    if (wrappedDistance < 0.012 && Math.abs(player.lane - box.lane) < 34) {
+      heldItem = Math.random() > 0.45 ? "TURBO" : "SCHOCK";
+      box.wait = 6;
     }
   });
+
   if ((keys.has(" ") || keys.has("Space")) && heldItem) {
-    if (heldItem === "TURBO") player.boost = 1.55;
+    if (heldItem === "TURBO") {
+      player.boost = 1.4;
+      player.speed += 0.04;
+    }
     if (heldItem === "SCHOCK" && !ai.finished) {
-      ai.stun = 0.85;
-      ai.speed *= 0.35;
+      ai.stun = 0.8;
+      ai.speed *= 0.45;
     }
     heldItem = "";
+    keys.delete(" ");
+    keys.delete("Space");
   }
 }
 
-function distance(a, b) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
-}
-
 function updatePlaces() {
-  const sorted = [...racers].sort((a, b) => {
+  const sorted = racers.slice().sort((a, b) => {
     if (a.finished && b.finished) return a.finishTime - b.finishTime;
     if (a.finished) return -1;
     if (b.finished) return 1;
-    return (b.lap + b.progress) - (a.lap + a.progress);
+    return b.lap + b.progress - (a.lap + a.progress);
   });
-  sorted.forEach((racer, idx) => {
-    racer.place = idx + 1;
+  sorted.forEach((racer, index) => {
+    racer.place = index + 1;
   });
 }
 
@@ -253,73 +247,75 @@ function update(dt) {
   racers.forEach((racer) => moveRacer(racer, dt));
   updateItems(dt);
   updatePlaces();
+
   if (racers.every((racer) => racer.finished)) {
     running = false;
     const winner = racers.slice().sort((a, b) => a.finishTime - b.finishTime)[0];
-    winnerText = `${winner.name} gewinnt in ${winner.finishTime.toFixed(2)}s`;
-    overlay.querySelector("strong").textContent = "RENNEN BEENDET";
-    overlay.querySelector("span").textContent = winnerText;
+    overlayTitle.textContent = "RENNEN BEENDET";
+    overlayText.textContent = `${winner.name} gewinnt in ${winner.finishTime.toFixed(2)}s`;
     startButton.textContent = "NOCHMAL FAHREN";
     overlay.classList.remove("hidden");
   }
 }
 
 function drawTrack() {
-  const grd = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  grd.addColorStop(0, "#111824");
-  grd.addColorStop(0.55, "#17202d");
-  grd.addColorStop(1, "#0a0d12");
-  ctx.fillStyle = grd;
+  const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  sky.addColorStop(0, "#131b2b");
+  sky.addColorStop(0.45, "#1b2638");
+  sky.addColorStop(1, "#142112");
+  ctx.fillStyle = sky;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "#123817";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = "#2b2f34";
+  ctx.fillStyle = "#17391b";
+  ctx.fillRect(0, 255, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#23272e";
   ctx.lineWidth = track.width;
   ctx.beginPath();
-  ctx.ellipse(center.x, center.y, track.rx, track.ry, 0, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.strokeStyle = "#d9d6c6";
-  ctx.lineWidth = 5;
-  ctx.beginPath();
-  ctx.ellipse(center.x, center.y, track.rx + track.width * 0.5, track.ry + track.width * 0.24, 0, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.ellipse(center.x, center.y, track.rx - track.width * 0.5, track.ry - track.width * 0.24, 0, 0, Math.PI * 2);
+  ctx.ellipse(track.cx, track.cy, track.rx, track.ry, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  ctx.strokeStyle = "rgba(255,255,255,0.35)";
-  ctx.setLineDash([28, 28]);
-  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#d8d6ca";
+  ctx.lineWidth = 5;
   ctx.beginPath();
-  ctx.ellipse(center.x, center.y, track.rx, track.ry, 0, 0, Math.PI * 2);
+  ctx.ellipse(track.cx, track.cy, track.rx + track.width * 0.5, track.ry + track.width * 0.24, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(track.cx, track.cy, track.rx - track.width * 0.5, track.ry - track.width * 0.24, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = "rgba(255,255,255,0.42)";
+  ctx.lineWidth = 4;
+  ctx.setLineDash([26, 24]);
+  ctx.beginPath();
+  ctx.ellipse(track.cx, track.cy, track.rx, track.ry, 0, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
 
-  const start = pointOnTrack(track.startAngle);
+  const start = trackPoint(track.start, 0);
   ctx.save();
   ctx.translate(start.x, start.y);
-  ctx.rotate(0);
+  ctx.rotate(start.rot + Math.PI / 2);
   for (let i = 0; i < 10; i++) {
-    ctx.fillStyle = i % 2 ? "#101010" : "#f8f8f8";
-    ctx.fillRect(-track.width * 0.5 + i * (track.width / 10), -8, track.width / 10, 16);
+    ctx.fillStyle = i % 2 ? "#101010" : "#f7f7f7";
+    ctx.fillRect(-track.width * 0.5 + i * track.width * 0.1, -9, track.width * 0.1, 18);
   }
   ctx.restore();
 }
 
 function drawBoxes() {
-  itemBoxes.forEach((box) => {
+  boxes.forEach((box) => {
     if (box.wait > 0) return;
-    const pos = pointOnTrack(box.angle, 4);
+    const p = trackPoint(box.progress, box.lane);
     ctx.save();
-    ctx.translate(pos.x, pos.y);
+    ctx.translate(p.x, p.y);
     ctx.rotate(performance.now() / 650);
-    ctx.fillStyle = "#111824";
-    ctx.fillRect(-16, -16, 32, 32);
+    ctx.fillStyle = "#101827";
+    ctx.fillRect(-15, -15, 30, 30);
     ctx.strokeStyle = "#36d8ff";
     ctx.lineWidth = 4;
-    ctx.strokeRect(-16, -16, 32, 32);
-    ctx.fillStyle = "#f3c744";
+    ctx.strokeRect(-15, -15, 30, 30);
+    ctx.fillStyle = "#ffe16a";
     ctx.font = "900 18px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -329,39 +325,42 @@ function drawBoxes() {
 }
 
 function drawRacer(racer) {
+  const point = trackPoint(racer.progress, racer.lane);
   const char = characters[racer.characterIndex];
-  const spec = carTypes[racer.carIndex];
+  const car = cars[racer.carIndex];
+  const wobble = racer.stun > 0 ? Math.sin(racer.wobble) * 0.38 : 0;
+
   ctx.save();
-  ctx.translate(racer.x, racer.y);
-  ctx.rotate(racer.rot);
+  ctx.translate(point.x, point.y);
+  ctx.rotate(point.rot + wobble);
   ctx.shadowColor = "rgba(0,0,0,0.55)";
   ctx.shadowBlur = 12;
-  ctx.fillStyle = "#07090d";
-  ctx.fillRect(-24, -14, 48, 28);
+  ctx.fillStyle = "#080a0e";
+  ctx.fillRect(-25, -14, 50, 28);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = spec.color;
-  ctx.fillRect(-19, -11, 38, 22);
-  ctx.fillStyle = char.color;
-  ctx.beginPath();
-  ctx.arc(-3, 0, 8, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.fillStyle = car.color;
+  ctx.fillRect(-20, -11, 40, 22);
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(9, -7, 8, 14);
+  ctx.fillStyle = char.color;
+  ctx.beginPath();
+  ctx.arc(-5, 0, 8, 0, Math.PI * 2);
+  ctx.fill();
   ctx.fillStyle = "#111";
-  ctx.fillRect(-21, -17, 11, 7);
-  ctx.fillRect(-21, 10, 11, 7);
-  ctx.fillRect(10, -17, 11, 7);
-  ctx.fillRect(10, 10, 11, 7);
+  ctx.fillRect(-22, -17, 12, 7);
+  ctx.fillRect(-22, 10, 12, 7);
+  ctx.fillRect(10, -17, 12, 7);
+  ctx.fillRect(10, 10, 12, 7);
   if (racer.boost > 0) {
     ctx.fillStyle = "#ffe16a";
-    ctx.fillRect(-35, -5, 12, 10);
+    ctx.fillRect(-37, -5, 14, 10);
   }
   ctx.restore();
 
-  ctx.fillStyle = "#fff";
+  ctx.fillStyle = "#ffffff";
   ctx.font = "900 13px Arial";
   ctx.textAlign = "center";
-  ctx.fillText(`${racer.name} ${char.name}`, racer.x, racer.y - 32);
+  ctx.fillText(`${racer.name} ${char.name}`, point.x, point.y - 34);
 }
 
 function drawHud() {
@@ -377,9 +376,9 @@ function draw() {
   drawHud();
 }
 
-function frame(t) {
-  const dt = Math.min(0.033, (t - lastTime) / 1000 || 0);
-  lastTime = t;
+function frame(time) {
+  const dt = Math.min(0.035, (time - lastFrame) / 1000 || 0);
+  lastFrame = time;
   update(dt);
   draw();
   requestAnimationFrame(frame);
@@ -388,8 +387,8 @@ function frame(t) {
 function setSelection(group, index) {
   if (group === "character") selectedCharacter = index;
   if (group === "car") selectedCar = index;
-  document.querySelectorAll(`[data-select="${group}"]`).forEach((button, i) => {
-    button.classList.toggle("active", i === index);
+  document.querySelectorAll(`[data-select="${group}"]`).forEach((button, buttonIndex) => {
+    button.classList.toggle("active", buttonIndex === index);
   });
 }
 
