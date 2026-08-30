@@ -269,14 +269,33 @@ function drawTrack() {
   ctx.fillStyle = "#17391b";
   ctx.fillRect(0, 255, canvas.width, canvas.height);
 
+  for (let i = 0; i < 18; i += 1) {
+    const x = i * 82 - 40;
+    ctx.fillStyle = i % 2 ? "#ef3e32" : "#ffe16a";
+    ctx.fillRect(x, 226, 54, 22);
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fillRect(x, 248, 54, 9);
+  }
+
   ctx.strokeStyle = "#23272e";
   ctx.lineWidth = track.width;
   ctx.beginPath();
   ctx.ellipse(track.cx, track.cy, track.rx, track.ry, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  ctx.strokeStyle = "#d8d6ca";
-  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#ef3e32";
+  ctx.lineWidth = 12;
+  ctx.setLineDash([26, 18]);
+  ctx.beginPath();
+  ctx.ellipse(track.cx, track.cy, track.rx + track.width * 0.5, track.ry + track.width * 0.24, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(track.cx, track.cy, track.rx - track.width * 0.5, track.ry - track.width * 0.24, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = "#f7f3dc";
+  ctx.lineWidth = 4;
   ctx.beginPath();
   ctx.ellipse(track.cx, track.cy, track.rx + track.width * 0.5, track.ry + track.width * 0.24, 0, 0, Math.PI * 2);
   ctx.stroke();

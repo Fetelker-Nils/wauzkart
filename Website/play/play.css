@@ -78,25 +78,25 @@
 
 .game-overlay {
   position: absolute;
-  left: 22px;
-  top: 22px;
-  bottom: 22px;
-  width: min(430px, calc(100% - 44px));
+  left: 24px;
+  top: auto;
+  bottom: 24px;
+  width: min(390px, calc(100% - 48px));
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 14px;
-  padding: 24px;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px;
   text-align: left;
   background:
-    linear-gradient(135deg, rgba(8, 12, 20, 0.86), rgba(8, 12, 20, 0.58)),
-    linear-gradient(90deg, rgba(255, 225, 106, 0.2), transparent 42%);
-  border: 2px solid rgba(255, 225, 106, 0.72);
-  border-left: 7px solid #ffe16a;
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0 5px, transparent 5px 14px),
+    linear-gradient(135deg, rgba(9, 13, 20, 0.72), rgba(9, 13, 20, 0.36));
+  border: 2px solid rgba(255, 225, 106, 0.84);
+  border-left: 8px solid #ef3e32;
   border-radius: 8px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.48), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
-  backdrop-filter: blur(2px);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.42), inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+  clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 26px 100%, 0 calc(100% - 26px));
+  backdrop-filter: blur(1px);
 }
 
 .game-overlay.hidden {
@@ -104,10 +104,12 @@
 }
 
 .game-overlay strong {
-  color: #ffe16a;
-  font-size: clamp(34px, 5.4vw, 64px);
+  color: #ffffff;
+  width: min-content;
+  font-size: clamp(34px, 5vw, 58px);
   line-height: 0.88;
-  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.5);
+  text-transform: uppercase;
+  text-shadow: 4px 4px 0 #ef3e32, 8px 8px 0 rgba(0, 0, 0, 0.58);
 }
 
 .game-overlay > span {
@@ -124,18 +126,19 @@
   width: 100%;
   min-height: 58px;
   margin: 4px 0 0;
-  color: #111;
+  color: #ffffff;
   background:
-    linear-gradient(135deg, transparent 0 12px, rgba(255, 255, 255, 0.24) 12px 14px, transparent 14px),
-    linear-gradient(180deg, #ffe36f, #f6c43d 54%, #e89b21);
-  border: 2px solid #fff4b8;
-  border-bottom: 5px solid #883b12;
+    linear-gradient(135deg, transparent 0 14px, rgba(255, 255, 255, 0.28) 14px 17px, transparent 17px),
+    linear-gradient(180deg, #ff4e3d, #d51d1d 56%, #8f1114);
+  border: 2px solid #ffd45a;
+  border-bottom: 6px solid #4b0608;
   border-radius: 6px;
   font-size: 18px;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 12px 0 rgba(0, 0, 0, 0.34), 0 0 22px rgba(255, 210, 70, 0.22);
-  clip-path: polygon(0 0, calc(100% - 13px) 0, 100% 13px, 100% 100%, 13px 100%, 0 calc(100% - 13px));
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+  box-shadow: 0 12px 0 rgba(0, 0, 0, 0.42), 0 0 26px rgba(239, 62, 50, 0.34);
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
   transition: transform 120ms ease, filter 120ms ease, box-shadow 120ms ease;
 }
 
@@ -162,12 +165,14 @@
 
 .setup-group {
   display: grid;
-  grid-template-columns: 86px repeat(2, minmax(0, 1fr));
+  grid-template-columns: 82px repeat(2, minmax(0, 1fr));
   align-items: center;
   gap: 8px;
-  padding: 9px;
-  background: linear-gradient(90deg, rgba(10, 18, 31, 0.86), rgba(21, 32, 49, 0.68));
-  border: 1px solid rgba(255, 225, 106, 0.54);
+  padding: 8px;
+  background:
+    linear-gradient(90deg, rgba(239, 62, 50, 0.24), transparent 38%),
+    rgba(5, 8, 13, 0.64);
+  border: 1px solid rgba(255, 212, 90, 0.75);
   border-radius: 6px;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
@@ -180,13 +185,13 @@
 }
 
 .play-setup button {
-  min-height: 42px;
+  min-height: 44px;
   color: #ffffff;
   background:
-    linear-gradient(135deg, transparent 0 9px, rgba(255, 255, 255, 0.14) 9px 11px, transparent 11px),
-    linear-gradient(180deg, #2e415b, #131d2c);
-  border-color: rgba(255, 255, 255, 0.5);
-  border-bottom-color: #070b12;
+    linear-gradient(135deg, transparent 0 10px, rgba(255, 255, 255, 0.18) 10px 12px, transparent 12px),
+    linear-gradient(180deg, #263447, #0b111c);
+  border-color: rgba(255, 255, 255, 0.58);
+  border-bottom-color: #030507;
   font-size: 14px;
   box-shadow: 0 7px 0 rgba(0, 0, 0, 0.34);
 }
@@ -194,11 +199,12 @@
 .play-setup button.active {
   color: #111;
   background:
-    linear-gradient(135deg, transparent 0 9px, rgba(255, 255, 255, 0.24) 9px 11px, transparent 11px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 8px, transparent 8px 16px),
     linear-gradient(180deg, #ffe16a, #f0b832);
-  border-color: #fff0a3;
-  border-bottom-color: #984713;
-  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.34), 0 0 18px rgba(255, 225, 106, 0.42);
+  border-color: #ffffff;
+  border-bottom-color: #8f3b0d;
+  text-shadow: none;
+  box-shadow: 0 7px 0 rgba(0, 0, 0, 0.34), 0 0 24px rgba(255, 225, 106, 0.58);
 }
 
 .play-controls {
