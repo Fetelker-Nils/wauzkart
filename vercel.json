@@ -27,6 +27,10 @@
       "dest": "/agb.html"
     },
     {
+      "src": "/play",
+      "dest": "/play/index.html"
+    },
+    {
       "src": "/(.*)",
       "dest": "/$1"
     }

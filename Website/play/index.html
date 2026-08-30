@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Wauz Kart Online-Testversion direkt im Browser spielen.">
+    <title>Wauz Kart Browser-Test</title>
+    <link rel="icon" href="../assets/icon-small.webp">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="play.css">
+  </head>
+  <body class="play-page">
+    <header class="play-shell">
+      <nav class="nav play-nav" aria-label="Hauptnavigation">
+        <a class="brand" href="/">
+          <img src="../assets/icon-small.webp" alt="">
+          <span>Wauz Kart</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">Start</a>
+          <a href="/garage">Garage</a>
+          <a href="/wiki">Wiki</a>
+          <a href="/#download">Download</a>
+        </div>
+      </nav>
+
+      <section class="play-stage" aria-label="Wauz Kart Browser-Testversion">
+        <div class="play-topbar">
+          <div>
+            <p class="eyebrow">Browser-Testversion</p>
+            <h1>Wauz Kart Arcade</h1>
+          </div>
+          <div class="play-stats" aria-live="polite">
+            <span id="hud-score">Score 0</span>
+            <span id="hud-item">Item -</span>
+            <span id="hud-time">90s</span>
+          </div>
+        </div>
+
+        <div class="game-frame">
+          <canvas id="game" width="1280" height="720" aria-label="Spielbereich" tabindex="0"></canvas>
+          <div class="game-overlay" id="overlay">
+            <strong>WAUZ KART ARCADE</strong>
+            <span>Insigne holen, KI abhaengen, Items nutzen.</span>
+            <button id="start-button" type="button">SPIEL STARTEN</button>
+          </div>
+        </div>
+
+        <div class="play-controls" aria-label="Steuerung">
+          <button type="button" data-key="ArrowLeft">Links</button>
+          <button type="button" data-key="ArrowUp">Gas</button>
+          <button type="button" data-key="ArrowRight">Rechts</button>
+          <button type="button" data-key=" ">Item</button>
+        </div>
+      </section>
+    </header>
+
+    <script src="play.js"></script>
+  </body>
+</html>

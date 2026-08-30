@@ -286,6 +286,23 @@ p {
   padding: 74px 0;
 }
 
+.browser-test {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding: 46px 28px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  background:
+    linear-gradient(120deg, rgba(239, 62, 50, 0.24), rgba(12, 17, 25, 0.98) 34%, rgba(54, 216, 255, 0.18)),
+    #0c1119;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-bottom: 4px solid rgba(243, 199, 68, 0.78);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
 .section-head {
   max-width: 800px;
   margin-bottom: 28px;
@@ -865,9 +882,15 @@ footer {
 @media (max-width: 860px) {
   .nav,
   .intro,
+  .browser-test,
   .release-panel,
   .download {
     display: block;
+  }
+
+  .browser-test .button {
+    width: 100%;
+    margin-top: 14px;
   }
 
   .nav-links {
