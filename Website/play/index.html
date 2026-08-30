@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Wauz Kart Online-Testversion direkt im Browser spielen.">
+    <meta name="description" content="Wauz Kart Renn-Testversion direkt im Browser spielen.">
     <title>Wauz Kart Browser-Test</title>
     <link rel="icon" href="../assets/icon-small.webp">
     <link rel="stylesheet" href="../style.css">
@@ -28,20 +28,32 @@
         <div class="play-topbar">
           <div>
             <p class="eyebrow">Browser-Testversion</p>
-            <h1>Wauz Kart Arcade</h1>
+            <h1>Wauz Kart Rennen</h1>
           </div>
           <div class="play-stats" aria-live="polite">
-            <span id="hud-score">Score 0</span>
+            <span id="hud-score">Runde 1/3</span>
             <span id="hud-item">Item -</span>
-            <span id="hud-time">90s</span>
+            <span id="hud-time">0.0s</span>
           </div>
         </div>
 
         <div class="game-frame">
           <canvas id="game" width="1280" height="720" aria-label="Spielbereich" tabindex="0"></canvas>
           <div class="game-overlay" id="overlay">
-            <strong>WAUZ KART ARCADE</strong>
-            <span>Insigne holen, KI abhaengen, Items nutzen.</span>
+            <strong>WAUZ KART RENNEN</strong>
+            <span>3 Runden fahren, KI schlagen, Items nutzen.</span>
+            <div class="play-setup" aria-label="Garage Auswahl">
+              <div>
+                <span>CHARAKTER</span>
+                <button type="button" data-select="character" data-index="0">Wauz</button>
+                <button type="button" data-select="character" data-index="1">Mauz</button>
+              </div>
+              <div>
+                <span>AUTO</span>
+                <button type="button" data-select="car" data-index="0">Sport</button>
+                <button type="button" data-select="car" data-index="1">Rally</button>
+              </div>
+            </div>
             <button id="start-button" type="button">SPIEL STARTEN</button>
           </div>
         </div>
@@ -49,6 +61,7 @@
         <div class="play-controls" aria-label="Steuerung">
           <button type="button" data-key="ArrowLeft">Links</button>
           <button type="button" data-key="ArrowUp">Gas</button>
+          <button type="button" data-key="ArrowDown">Bremse</button>
           <button type="button" data-key="ArrowRight">Rechts</button>
           <button type="button" data-key=" ">Item</button>
         </div>

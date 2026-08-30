@@ -99,13 +99,14 @@
   text-shadow: 0 5px 0 rgba(0, 0, 0, 0.5);
 }
 
-.game-overlay span {
+.game-overlay > span {
   color: #ffffff;
   font-size: clamp(16px, 2.5vw, 24px);
   font-weight: 900;
 }
 
-.game-overlay button {
+.game-overlay button,
+.play-setup button {
   width: min(360px, 82vw);
   min-height: 64px;
   margin: 6px auto 0;
@@ -119,9 +120,51 @@
   cursor: pointer;
 }
 
+.play-setup {
+  width: min(560px, 88vw);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 2px auto 0;
+}
+
+.play-setup > div {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(7, 11, 18, 0.72);
+  border: 2px solid rgba(255, 225, 106, 0.5);
+  border-radius: 8px;
+}
+
+.play-setup span {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.play-setup button {
+  width: 100%;
+  min-height: 46px;
+  margin: 0;
+  color: #ffffff;
+  background: linear-gradient(180deg, #263447, #111a28);
+  border-color: rgba(255, 255, 255, 0.5);
+  border-bottom-color: #070b12;
+  font-size: 15px;
+}
+
+.play-setup button.active {
+  color: #111;
+  background: linear-gradient(180deg, #ffe16a, #f0b832);
+  border-color: #fff0a3;
+  border-bottom-color: #984713;
+}
+
 .play-controls {
   display: none;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
   margin-top: 12px;
 }
@@ -146,5 +189,9 @@
 
   .play-controls {
     display: grid;
+  }
+
+  .play-setup {
+    grid-template-columns: 1fr;
   }
 }
