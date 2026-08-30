@@ -51,7 +51,6 @@ for (const file of [
 }
 
 copyDir(path.join(root, "data"), path.join(out, "data"));
-copyDir(path.join(root, "play"), path.join(out, "play"));
 copyDir(path.join(root, "assets"), path.join(out, "assets"), (srcPath, entry) => {
   if (!entry.isFile()) {
     return true;
