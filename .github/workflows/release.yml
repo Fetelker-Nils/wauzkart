@@ -30,7 +30,7 @@ jobs:
 
       - name: Build Windows EXE
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart --icon assets\icon.ico --paths src --hidden-import wauzkart.app --add-data "assets;assets" wauz_kart.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart --icon assets\icon.ico --paths src --hidden-import wauzkart.app --collect-submodules wauzkart --add-data "assets;assets" wauz_kart.py
 
       - name: Prepare Windows installer
         run: |
@@ -70,7 +70,7 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --collect-submodules OpenGL --collect-data OpenGL --hidden-import OpenGL.platform.egl --hidden-import OpenGL.platform.glx --hidden-import OpenGL.platform.x11 --hidden-import OpenGL.platform.ctypesloader --hidden-import PyQt5.QtMultimedia --add-data "assets:assets" wauz_kart.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --collect-submodules wauzkart --collect-submodules OpenGL --collect-data OpenGL --hidden-import OpenGL.platform.egl --hidden-import OpenGL.platform.glx --hidden-import OpenGL.platform.x11 --hidden-import OpenGL.platform.ctypesloader --hidden-import PyQt5.QtMultimedia --add-data "assets:assets" wauz_kart.py
           chmod +x dist/wauzkart-linux
 
       - name: Package Linux DEB
@@ -155,7 +155,7 @@ jobs:
 
       - name: Build macOS app
         run: |
-          pyinstaller --noconfirm --clean --windowed --name wauzkart-macos --paths src --hidden-import wauzkart.app --add-data "assets:assets" wauz_kart.py
+          pyinstaller --noconfirm --clean --windowed --name wauzkart-macos --paths src --hidden-import wauzkart.app --collect-submodules wauzkart --add-data "assets:assets" wauz_kart.py
 
       - name: Package macOS DMG
         run: |

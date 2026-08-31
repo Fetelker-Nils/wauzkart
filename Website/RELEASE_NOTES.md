@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.35
+# Wauz Kart v1.0.36
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -49,6 +49,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Item-Auswahl-HUD wurde nochmal groesser und auffaelliger gemacht
 - Linux-Auto-Updates starten den Installer jetzt in einem Terminal statt per direktem `pkexec`
 - Linux-Update-Terminal bleibt bei Fehlern offen, damit Passwortabfrage und Fehlermeldungen sichtbar bleiben
+- Release-Build sammelt jetzt alle `wauzkart`-Submodule explizit ein, damit `wauzkart.ui.main_window` in Installer-Builds sicher enthalten ist
 
 ## Download
 

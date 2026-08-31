@@ -1,6 +1,6 @@
 """Wauz Kart game package."""
 
-__version__ = "1.0.35"
+__version__ = "1.0.36"
 
 from .app import MainWindow, main
 
