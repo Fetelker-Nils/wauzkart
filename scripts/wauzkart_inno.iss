@@ -1,5 +1,5 @@
 #define MyAppName "Wauz Kart"
-#define MyAppVersion "1.0.40"
+#define MyAppVersion "1.0.41"
 #define MyAppExeName "wauzkart.exe"
 
 [Setup]
@@ -32,6 +32,10 @@ Name: "desktopicon"; Description: "Desktop-Verknuepfung erstellen"; GroupDescrip
 
 [Files]
 Source: "..\dist\wauzkart\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\src\wauzkart\*"; DestDir: "{app}\src\wauzkart"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "__pycache__\*,*.pyc,*.pyo"
+
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\src"
 
 [Icons]
 Name: "{group}\Wauz Kart"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"

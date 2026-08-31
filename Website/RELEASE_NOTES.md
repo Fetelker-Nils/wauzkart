@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.40
+# Wauz Kart v1.0.41
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -58,6 +58,9 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Windows-Installer wird jetzt mit Inno Setup gebaut statt als zweite PyInstaller-EXE
 - Windows-Spiel wird als PyInstaller-Onedir-App verpackt, damit der Installer weniger wie ein selbstentpackendes Malware-Paket wirkt
 - Windows-Auto-Update nutzt jetzt normale Inno-Setup-Parameter fuer stille Installation
+- Windows-Installer installiert zusaetzlich den `src\wauzkart`-Fallback, falls PyInstaller ein Modul im internen Archiv nicht findet
+- Windows-Entry-Point nutzt bei installierten Builds den Ordner der EXE fuer den `src`-Suchpfad
+- Windows-Smoke-Test importiert jetzt `wauzkart.app` wirklich, statt nur nach dem Modulnamen zu suchen
 
 ## Download
 
