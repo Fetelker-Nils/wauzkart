@@ -1075,6 +1075,7 @@ class RaceWidget(QOpenGLWidget):
         self._draw_insignia_score_overlay(now, w, h)
         self._draw_item_roulette_overlays(now, w, h)
         self._draw_minimap_overlay(w, h)
+        self._draw_countdown_overlay(now, w, h)
         self._draw_center_status_overlays(now, w, h)
 
     def cycle_camera_mode(self):
@@ -3164,10 +3165,11 @@ class RaceWidget(QOpenGLWidget):
         for i in range(min(len(view_idxs), len(rects))):
             pl = self.players[view_idxs[i]]
             rx, ry, rw, rh = rects[i]
-            box_w, box_h = 260, 86
+            box_w = max(240, min(340, rw - 28))
+            box_h = 112
             margin = 14
             x = max(rx + margin, rx + rw - box_w - margin - 34)
-            y = ry + margin + (86 if self.insignia_mode else 0)
+            y = ry + margin + (102 if self.insignia_mode else 0)
 
             if pl.item_roulette_show_until <= now:
                 continue
@@ -3185,38 +3187,82 @@ class RaceWidget(QOpenGLWidget):
             # background
             p.setPen(Qt.NoPen)
             p.setBrush(QColor(0, 0, 0, 172))
-            p.drawRoundedRect(x, y, box_w, box_h, 12, 12)
+            p.drawRoundedRect(x, y, box_w, box_h, 14, 14)
             p.setPen(QPen(accent, 3))
             p.setBrush(Qt.NoBrush)
-            p.drawRoundedRect(x + 2, y + 2, box_w - 4, box_h - 4, 10, 10)
+            p.drawRoundedRect(x + 2, y + 2, box_w - 4, box_h - 4, 12, 12)
 
             # wheel icon
-            cx = x + 42
+            cx = x + 56
             cy = y + box_h // 2
             p.setBrush(Qt.NoBrush)
-            p.setPen(QPen(QColor(255, 255, 255, 210), 2))
-            p.drawEllipse(cx - 24, cy - 24, 48, 48)
+            p.setPen(QPen(QColor(255, 255, 255, 215), 3))
+            p.drawEllipse(cx - 33, cy - 33, 66, 66)
             angle = (now - pl.item_roulette_start_time) * (720.0 if now < pl.item_roulette_end_time else 60.0)
             rad = math.radians(angle)
-            px = cx + math.cos(rad) * 22.0
-            py = cy - math.sin(rad) * 22.0
-            p.setPen(QPen(accent, 5))
+            px = cx + math.cos(rad) * 31.0
+            py = cy - math.sin(rad) * 31.0
+            p.setPen(QPen(accent, 7))
             p.drawLine(cx, cy, int(px), int(py))
+            p.setPen(Qt.NoPen)
+            p.setBrush(accent)
+            p.drawEllipse(cx - 7, cy - 7, 14, 14)
 
             # text
             p.setPen(QColor(255, 255, 255, 235))
-            p.setFont(QFont("Arial", 15, QFont.Bold))
-            p.drawText(x + 82, y + 14, box_w - 94, 28, Qt.AlignLeft | Qt.AlignVCenter, title)
+            p.setFont(QFont("Arial", 20, QFont.Black))
+            p.drawText(x + 108, y + 20, box_w - 122, 34, Qt.AlignLeft | Qt.AlignVCenter, title)
 
             p.setPen(QColor(200, 200, 200, 220))
-            p.setFont(QFont("Arial", 10, QFont.Bold))
+            p.setFont(QFont("Arial", 12, QFont.Bold))
             if pl.pending_item:
                 if now >= pl.item_roulette_end_time:
                     sub = "Linksklick zum Feuern"
                 else:
                     sub = "Waehlt..."
-                p.drawText(x + 82, y + 46, box_w - 94, 24, Qt.AlignLeft | Qt.AlignVCenter, sub)
+                p.drawText(x + 108, y + 58, box_w - 122, 30, Qt.AlignLeft | Qt.AlignVCenter, sub)
 
+        p.end()
+
+    def _draw_countdown_overlay(self, now, w, h):
+        text = self.get_countdown_text()
+        if not text:
+            return
+        clean = text.replace("!", "")
+        if self.countdown_phase == "go":
+            clean = "LOS!"
+
+        elapsed = max(0.0, now - float(getattr(self, "phase_timer", now)))
+        pulse = 1.0 + max(0.0, 1.0 - elapsed) * 0.28
+        font_size = int(max(72, min(150, min(w, h) * 0.22)) * pulse)
+        sub_size = max(16, int(font_size * 0.18))
+
+        panel_w = max(280, min(int(w * 0.54), 620))
+        panel_h = max(150, min(int(h * 0.28), 250))
+        x = (w - panel_w) // 2
+        y = (h - panel_h) // 2
+
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing, True)
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor(0, 0, 0, 120))
+        p.drawRoundedRect(x, y, panel_w, panel_h, 18, 18)
+        p.setPen(QPen(QColor(255, 220, 65, 245), 4))
+        p.setBrush(Qt.NoBrush)
+        p.drawRoundedRect(x + 3, y + 3, panel_w - 6, panel_h - 6, 15, 15)
+
+        p.setFont(QFont("Arial", font_size, QFont.Black))
+        text_rect_y = y + int(panel_h * 0.03)
+        shadow = 5
+        p.setPen(QColor(0, 0, 0, 230))
+        p.drawText(x + shadow, text_rect_y + shadow, panel_w, int(panel_h * 0.72), Qt.AlignCenter, clean)
+        p.setPen(QColor(255, 225, 55, 255) if self.countdown_phase != "go" else QColor(70, 240, 110, 255))
+        p.drawText(x, text_rect_y, panel_w, int(panel_h * 0.72), Qt.AlignCenter, clean)
+
+        p.setFont(QFont("Arial", sub_size, QFont.Bold))
+        p.setPen(QColor(255, 255, 255, 230))
+        sub = "BEREIT FUER DEN START" if self.countdown_phase != "go" else "VOLLGAS"
+        p.drawText(x + 18, y + panel_h - 48, panel_w - 36, 28, Qt.AlignCenter, sub)
         p.end()
 
     def _draw_center_status_overlays(self, now, w, h):

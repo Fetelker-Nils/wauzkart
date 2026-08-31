@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.33
+# Wauz Kart v1.0.34
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -45,6 +45,8 @@ Aktuelle Website-Release fuer Wauz Kart.
 - LAN-Snapshots serialisieren den Sieger stabil als Spieler-Index
 - Insignien-Diebstahl zeigt grosse Punkte oben im Rennen
 - Item-Auswahl, Angriffswarnung und Zielmeldung wurden als groessere Racing-HUD-Overlays verbessert
+- Start-Countdown `3, 2, 1, LOS!` erscheint jetzt gross in der Bildschirmmitte
+- Item-Auswahl-HUD wurde nochmal groesser und auffaelliger gemacht
 
 ## Download
 
