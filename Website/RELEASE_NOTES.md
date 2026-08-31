@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.44
+# Wauz Kart v1.0.45
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -12,6 +12,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Windows EXE-Installer als `install-wauzkart-windows.exe`
 - Linux SH-Installer als `install-wauzkart-linux.sh`
 - macOS DMG als `wauzkart-macos.dmg`
+- Windows-Installer hat jetzt einen eigenen Wauz-Kart-Look mit Wizard-Banner, Header-Logo und eigenen Setup-Texten
 - Update-Check beim Spielstart mit passendem Installer-Link fuer das aktuelle System
 - bessere Rennstart- und LAN-Fehlermeldungen ohne leere Null/None-Texte
 - WSL/Ubuntu-Fix: OpenGL-Projektion ohne GLU
