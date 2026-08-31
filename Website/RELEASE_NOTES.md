@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.36
+# Wauz Kart v1.0.37
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -50,6 +50,8 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Linux-Auto-Updates starten den Installer jetzt in einem Terminal statt per direktem `pkexec`
 - Linux-Update-Terminal bleibt bei Fehlern offen, damit Passwortabfrage und Fehlermeldungen sichtbar bleiben
 - Release-Build sammelt jetzt alle `wauzkart`-Submodule explizit ein, damit `wauzkart.ui.main_window` in Installer-Builds sicher enthalten ist
+- Entry-Point enthaelt jetzt einen direkten Import-Smoke-Test fuer `wauzkart.ui.main_window`
+- GitHub Actions startet jede gebaute Windows/Linux/macOS-App mit `--smoke-import`, bevor Installer veroeffentlicht werden
 
 ## Download
 
