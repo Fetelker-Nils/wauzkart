@@ -30,15 +30,16 @@ jobs:
 
       - name: Build Windows EXE
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart --icon assets\icon.ico --paths src --hidden-import wauzkart.app --hidden-import wauzkart.ui.main_window --collect-submodules wauzkart --add-data "assets;assets" wauz_kart.py
-          dist\wauzkart.exe --smoke-import
+          pyinstaller --noconfirm --clean --windowed --name wauzkart --icon assets\icon.ico --paths src --hidden-import wauzkart.app --hidden-import wauzkart.ui.main_window --collect-submodules wauzkart --add-data "assets;assets" wauz_kart.py
+          dist\wauzkart\wauzkart.exe --smoke-import
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
 
       - name: Prepare Windows installer
         run: |
-          New-Item -ItemType Directory -Force -Path installer_payload | Out-Null
-          Copy-Item dist\wauzkart.exe installer_payload\wauzkart.exe
-          pyinstaller --noconfirm --clean --onefile --windowed --name install-wauzkart-windows --icon assets\icon.ico --add-binary "installer_payload\wauzkart.exe;." scripts\windows_installer.py
-          Copy-Item dist\install-wauzkart-windows.exe install-wauzkart-windows.exe
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" scripts\wauzkart_inno.iss
+          Copy-Item Output\install-wauzkart-windows.exe install-wauzkart-windows.exe
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4

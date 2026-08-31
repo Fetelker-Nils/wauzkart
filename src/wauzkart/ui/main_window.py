@@ -310,7 +310,14 @@ class MainWindow(QMainWindow):
         if system == "windows":
             flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
             subprocess.Popen(
-                [str(target), "--auto-update", "--restart", "--wait-pid", pid],
+                [
+                    str(target),
+                    "/CURRENTUSER",
+                    "/VERYSILENT",
+                    "/SUPPRESSMSGBOXES",
+                    "/NORESTART",
+                    "/CLOSEAPPLICATIONS",
+                ],
                 cwd=str(target.parent),
                 creationflags=flags,
             )

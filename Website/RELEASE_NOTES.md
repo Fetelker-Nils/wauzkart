@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.39
+# Wauz Kart v1.0.40
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -55,6 +55,9 @@ Aktuelle Website-Release fuer Wauz Kart.
 - `wauzkart.ui.main_window` ist jetzt zusaetzlich als expliziter Hidden-Import in allen Release-Builds eingetragen
 - Der Smoke-Test prueft die Modul-Paketierung ohne GUI/OpenGL-Initialisierung, damit Linux/macOS-Builds nicht am Headless-Runner scheitern
 - Windows-Release-Build prueft den gepackten Import mit `--smoke-import`; Linux/macOS bauen mit explizitem Hidden-Import ohne Headless-Starttest
+- Windows-Installer wird jetzt mit Inno Setup gebaut statt als zweite PyInstaller-EXE
+- Windows-Spiel wird als PyInstaller-Onedir-App verpackt, damit der Installer weniger wie ein selbstentpackendes Malware-Paket wirkt
+- Windows-Auto-Update nutzt jetzt normale Inno-Setup-Parameter fuer stille Installation
 
 ## Download
 
