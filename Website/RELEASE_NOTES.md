@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.38
+# Wauz Kart v1.0.39
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -54,6 +54,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - GitHub Actions startet jede gebaute Windows/Linux/macOS-App mit `--smoke-import`, bevor Installer veroeffentlicht werden
 - `wauzkart.ui.main_window` ist jetzt zusaetzlich als expliziter Hidden-Import in allen Release-Builds eingetragen
 - Der Smoke-Test prueft die Modul-Paketierung ohne GUI/OpenGL-Initialisierung, damit Linux/macOS-Builds nicht am Headless-Runner scheitern
+- Windows-Release-Build prueft den gepackten Import mit `--smoke-import`; Linux/macOS bauen mit explizitem Hidden-Import ohne Headless-Starttest
 
 ## Download
 
