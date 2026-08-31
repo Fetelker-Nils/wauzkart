@@ -343,9 +343,10 @@ class MainWindow(QMainWindow):
     def _write_linux_update_launcher(self, target, args):
         target = Path(target)
         launcher = target.parent / "start-wauzkart-update.sh"
+        quoted_cwd = "'" + str(target.parent).replace("'", "'\"'\"'") + "'"
         quoted_args = " ".join("'" + str(arg).replace("'", "'\"'\"'") + "'" for arg in args)
         script = f"""#!/usr/bin/env sh
-cd '{str(target.parent).replace("'", "'\"'\"'")}' || exit 1
+cd {quoted_cwd} || exit 1
 clear 2>/dev/null || true
 echo "Wauz Kart Update"
 echo "================"

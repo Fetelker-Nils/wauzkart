@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.41
+# Wauz Kart v1.0.42
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -61,6 +61,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Windows-Installer installiert zusaetzlich den `src\wauzkart`-Fallback, falls PyInstaller ein Modul im internen Archiv nicht findet
 - Windows-Entry-Point nutzt bei installierten Builds den Ordner der EXE fuer den `src`-Suchpfad
 - Windows-Smoke-Test importiert jetzt `wauzkart.app` wirklich, statt nur nach dem Modulnamen zu suchen
+- Python-3.11-Syntaxfehler im Linux-Update-Launcher-F-String behoben
 
 ## Download
 
