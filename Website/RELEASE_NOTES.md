@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.32
+# Wauz Kart v1.0.33
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -41,6 +41,10 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Linux-Soundfix mit QtMultimedia/GStreamer-Paketen und WAV-Fallback ueber QSoundEffect
 - Linux-Starter schuetzt vor `sudo wauzkart`, damit Audio ueber die normale Benutzer-Sitzung laeuft
 - zusaetzliche GStreamer-Pakete fuer stabilere Audio-Wiedergabe auf Debian, Ubuntu und Linux Mint
+- LAN-Rennen bleiben nach Zieleinlauf aktiv, bis alle Online-Spieler fertig sind
+- LAN-Snapshots serialisieren den Sieger stabil als Spieler-Index
+- Insignien-Diebstahl zeigt grosse Punkte oben im Rennen
+- Item-Auswahl, Angriffswarnung und Zielmeldung wurden als groessere Racing-HUD-Overlays verbessert
 
 ## Download
 

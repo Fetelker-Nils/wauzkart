@@ -631,7 +631,7 @@ class RaceWidget(QOpenGLWidget):
             "phase": self.countdown_phase,
             "phase_timer": self.phase_timer,
             "race_over": self.race_over,
-            "winner": self.winner,
+            "winner": self._player_index(self.winner) if self.winner is not None else None,
             "finish_counter": self.finish_counter,
             "game_timer": self.game_timer,
             "insignia": {
@@ -652,6 +652,7 @@ class RaceWidget(QOpenGLWidget):
             "laps": int(pl.laps),
             "sector": int(pl.sector),
             "finished": bool(pl.finished),
+            "finish_time": float(getattr(pl, "finish_time", 0.0) or 0.0),
             "finish_place": pl.finish_place,
             "crash_timer": float(pl.crash_timer),
             "speed_boost_timer": float(pl.speed_boost_timer),
@@ -684,7 +685,11 @@ class RaceWidget(QOpenGLWidget):
         self.countdown_phase = snapshot.get("phase", self.countdown_phase)
         self.phase_timer = float(snapshot.get("phase_timer", self.phase_timer))
         self.race_over = bool(snapshot.get("race_over", self.race_over))
-        self.winner = snapshot.get("winner", self.winner)
+        winner_idx = snapshot.get("winner", None)
+        if isinstance(winner_idx, int) and 0 <= winner_idx < len(self.players):
+            self.winner = self.players[winner_idx]
+        elif winner_idx is None:
+            self.winner = None
         self.finish_counter = int(snapshot.get("finish_counter", self.finish_counter) or 0)
         self.game_timer = snapshot.get("game_timer", self.game_timer)
         insignia = snapshot.get("insignia")
@@ -716,6 +721,7 @@ class RaceWidget(QOpenGLWidget):
         pl.laps = int(data.get("laps", pl.laps) or 0)
         pl.sector = int(data.get("sector", pl.sector) or 0)
         pl.finished = bool(data.get("finished", pl.finished))
+        pl.finish_time = float(data.get("finish_time", getattr(pl, "finish_time", 0.0)) or 0.0)
         pl.finish_place = data.get("finish_place", pl.finish_place)
         pl.crash_timer = float(data.get("crash_timer", pl.crash_timer))
         pl.speed_boost_timer = float(data.get("speed_boost_timer", pl.speed_boost_timer))
@@ -1065,9 +1071,11 @@ class RaceWidget(QOpenGLWidget):
                 glViewport(half_w, 0, half_w, half_h)
                 self._draw_viewport(self.players[view_idxs[3]], half_w, half_h)
 
-        # 2D-Overlay: Item-"Gluecksrad" (oueben rechts je Viewport)
+        # 2D-Overlay: Rennen-HUD direkt ueber der 3D-Szene
+        self._draw_insignia_score_overlay(now, w, h)
         self._draw_item_roulette_overlays(now, w, h)
         self._draw_minimap_overlay(w, h)
+        self._draw_center_status_overlays(now, w, h)
 
     def cycle_camera_mode(self):
         self.camera_mode = (int(getattr(self, "camera_mode", 0)) + 1) % 3
@@ -2266,18 +2274,20 @@ class RaceWidget(QOpenGLWidget):
             if p.life <= 0: pl.particles.remove(p)
 
     def _all_human_racers_finished(self):
-        if self.map_name == "Raeuber & Bulle" or self.num_humans <= 0:
+        if self.map_name in ("Raeuber & Bulle", "Insignien-Diebstahl") or self.num_humans <= 0:
             return False
-        humans = self.players[:self.num_humans]
+        if self.network_server is not None:
+            expected = int(getattr(self.network_server, "player_count", self.num_humans) or self.num_humans)
+            expected = max(1, min(expected, len(self.players)))
+            humans = self.players[:expected]
+        else:
+            humans = self.players[:self.num_humans]
         return bool(humans) and all(pl.finished for pl in humans)
 
     def _update_human_finish_overtime(self, now):
-        if self.race_over or self.map_name == "Raeuber & Bulle":
+        if self.race_over or self.map_name in ("Raeuber & Bulle", "Insignien-Diebstahl"):
             return
         if not self._all_human_racers_finished():
-            return
-        if self.network_server is not None:
-            self._finish_standard_race_after_overtime()
             return
         if self.human_finish_overtime_started_at is None:
             self.human_finish_overtime_started_at = now
@@ -3055,6 +3065,73 @@ class RaceWidget(QOpenGLWidget):
             return idxs[:4]
         return list(range(self.num_humans))
 
+    def _item_display_name(self, item_id):
+        names = {
+            "abknaller": "Abknaller",
+            "turbo": "Turbo",
+            "wirbler": "Wirbler",
+            "schild": "Schild",
+            "frost": "Frost",
+            "oelspur": "Oelspur",
+        }
+        return names.get(item_id, str(item_id))
+
+    def _draw_insignia_score_overlay(self, now, w, h):
+        if not self.insignia_mode:
+            return
+        scores = list(getattr(self, "insignia_scores", []) or [])
+        if not scores:
+            return
+        while len(scores) < len(self.players):
+            scores.append(0.0)
+        limit = int(getattr(self, "insignia_score_limit", 20) or 20)
+        holder = getattr(self, "insignia_holder", None)
+        time_left = getattr(self, "game_timer", None)
+
+        panel_w = max(280, min(max(430, int(w * 0.48)), max(280, w - 40)))
+        panel_h = 82
+        x = (w - panel_w) // 2
+        y = 14
+
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing, True)
+        p.setPen(QPen(QColor(255, 220, 70, 235), 2))
+        p.setBrush(QColor(5, 8, 16, 188))
+        p.drawRoundedRect(x, y, panel_w, panel_h, 10, 10)
+
+        p.setPen(QColor(255, 224, 72, 245))
+        p.setFont(QFont("Arial", 20, QFont.Black))
+        p.drawText(x + 16, y + 8, panel_w - 32, 28, Qt.AlignCenter, "INSIGNIEN-PUNKTE")
+
+        top_text = ""
+        if time_left is not None:
+            top_text = f"ZEIT {max(0.0, float(time_left)):.0f}s"
+        if isinstance(holder, int) and 0 <= holder < len(self.players):
+            top_text = (top_text + "  |  " if top_text else "") + f"INSIGNE: P{holder + 1}"
+        p.setPen(QColor(245, 245, 245, 230))
+        p.setFont(QFont("Arial", 10, QFont.Bold))
+        p.drawText(x + 16, y + 34, panel_w - 32, 18, Qt.AlignCenter, top_text)
+
+        visible = min(len(self.players), 4)
+        gap = 8
+        chip_w = max(76, (panel_w - 32 - gap * (visible - 1)) // max(visible, 1))
+        chip_y = y + 55
+        for idx in range(visible):
+            chip_x = x + 16 + idx * (chip_w + gap)
+            rgb = getattr(self.players[idx], "color", (1.0, 1.0, 1.0))
+            color = QColor(int(rgb[0] * 255), int(rgb[1] * 255), int(rgb[2] * 255), 240)
+            is_holder = idx == holder
+            p.setPen(QPen(QColor(255, 240, 140, 250) if is_holder else QColor(255, 255, 255, 90), 2))
+            p.setBrush(QColor(20, 24, 34, 210))
+            p.drawRoundedRect(chip_x, chip_y, chip_w, 20, 6, 6)
+            p.setPen(Qt.NoPen)
+            p.setBrush(color)
+            p.drawEllipse(chip_x + 8, chip_y + 5, 10, 10)
+            p.setPen(QColor(255, 255, 255, 240))
+            p.setFont(QFont("Arial", 10, QFont.Bold))
+            p.drawText(chip_x + 24, chip_y, chip_w - 30, 20, Qt.AlignLeft | Qt.AlignVCenter, f"P{idx + 1}: {int(scores[idx])}/{limit}")
+        p.end()
+
     def _draw_item_roulette_overlays(self, now, w, h):
         if not getattr(self, "powerups_enabled", True):
             return
@@ -3087,32 +3164,10 @@ class RaceWidget(QOpenGLWidget):
         for i in range(min(len(view_idxs), len(rects))):
             pl = self.players[view_idxs[i]]
             rx, ry, rw, rh = rects[i]
-            box_w, box_h = 170, 56
-            margin = 10
-            x = rx + rw - box_w - margin - 34  # ein bisschen weiter links, aber immer noch rechts oueben
-            y = ry + margin
-
-            # incoming-attack warning (left of the roulette box)
-            if pl.incoming_attack_until > now and pl.incoming_attack_type:
-                warn_w, warn_h = 340, 56
-                wx = x - warn_w - 10
-                wy = y + 2
-                p.setPen(Qt.NoPen)
-                p.setBrush(QColor(140, 0, 0, 180))
-                p.drawRoundedRect(wx, wy, warn_w, warn_h, 10, 10)
-
-                tname = names.get(pl.incoming_attack_type, str(pl.incoming_attack_type))
-                from_txt = f" von {pl.incoming_attack_from}" if pl.incoming_attack_from else ""
-                eta = max(0.0, pl.incoming_attack_execute_time - now)
-                eta_txt = f"in {eta:.1f}s" if eta > 0 else "JETZT!"
-
-                p.setPen(QColor(255, 235, 235, 245))
-                p.setFont(QFont("Arial", 11, QFont.Bold))
-                p.drawText(wx + 12, wy + 6, warn_w - 24, 22, Qt.AlignLeft | Qt.AlignVCenter, "DU WIRST ANGEGRIFFEN!")
-
-                p.setPen(QColor(255, 220, 220, 240))
-                p.setFont(QFont("Arial", 11))
-                p.drawText(wx + 12, wy + 28, warn_w - 24, 22, Qt.AlignLeft | Qt.AlignVCenter, f"{tname}{from_txt}  ({eta_txt})")
+            box_w, box_h = 260, 86
+            margin = 14
+            x = max(rx + margin, rx + rw - box_w - margin - 34)
+            y = ry + margin + (86 if self.insignia_mode else 0)
 
             if pl.item_roulette_show_until <= now:
                 continue
@@ -3129,36 +3184,88 @@ class RaceWidget(QOpenGLWidget):
 
             # background
             p.setPen(Qt.NoPen)
-            p.setBrush(QColor(0, 0, 0, 150))
-            p.drawRoundedRect(x, y, box_w, box_h, 10, 10)
+            p.setBrush(QColor(0, 0, 0, 172))
+            p.drawRoundedRect(x, y, box_w, box_h, 12, 12)
+            p.setPen(QPen(accent, 3))
+            p.setBrush(Qt.NoBrush)
+            p.drawRoundedRect(x + 2, y + 2, box_w - 4, box_h - 4, 10, 10)
 
             # wheel icon
-            cx = x + 26
+            cx = x + 42
             cy = y + box_h // 2
             p.setBrush(Qt.NoBrush)
             p.setPen(QPen(QColor(255, 255, 255, 210), 2))
-            p.drawEllipse(cx - 14, cy - 14, 28, 28)
+            p.drawEllipse(cx - 24, cy - 24, 48, 48)
             angle = (now - pl.item_roulette_start_time) * (720.0 if now < pl.item_roulette_end_time else 60.0)
             rad = math.radians(angle)
-            px = cx + math.cos(rad) * 13.0
-            py = cy - math.sin(rad) * 13.0
-            p.setPen(QPen(accent, 3))
+            px = cx + math.cos(rad) * 22.0
+            py = cy - math.sin(rad) * 22.0
+            p.setPen(QPen(accent, 5))
             p.drawLine(cx, cy, int(px), int(py))
 
             # text
             p.setPen(QColor(255, 255, 255, 235))
-            p.setFont(QFont("Arial", 10, QFont.Bold))
-            p.drawText(x + 52, y + 8, box_w - 58, 22, Qt.AlignLeft | Qt.AlignVCenter, title)
+            p.setFont(QFont("Arial", 15, QFont.Bold))
+            p.drawText(x + 82, y + 14, box_w - 94, 28, Qt.AlignLeft | Qt.AlignVCenter, title)
 
             p.setPen(QColor(200, 200, 200, 220))
-            p.setFont(QFont("Arial", 8))
+            p.setFont(QFont("Arial", 10, QFont.Bold))
             if pl.pending_item:
                 if now >= pl.item_roulette_end_time:
                     sub = "Linksklick zum Feuern"
                 else:
                     sub = "Waehlt..."
-                p.drawText(x + 52, y + 28, box_w - 58, 20, Qt.AlignLeft | Qt.AlignVCenter, sub)
+                p.drawText(x + 82, y + 46, box_w - 94, 24, Qt.AlignLeft | Qt.AlignVCenter, sub)
 
+        p.end()
+
+    def _draw_center_status_overlays(self, now, w, h):
+        view_idxs = self._view_player_indices()
+        rects = self._human_viewport_rects(w, h)
+        if not rects:
+            return
+
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing, True)
+        for i in range(min(len(view_idxs), len(rects))):
+            pl = self.players[view_idxs[i]]
+            rx, ry, rw, rh = rects[i]
+            lines = None
+            accent = QColor(255, 70, 70, 245)
+
+            if pl.incoming_attack_until > now and pl.incoming_attack_type:
+                eta = max(0.0, pl.incoming_attack_execute_time - now)
+                eta_txt = f"in {eta:.1f}s" if eta > 0 else "JETZT!"
+                lines = ("WIRD ANGEGRIFFEN", f"{self._item_display_name(pl.incoming_attack_type)} {eta_txt}")
+                accent = QColor(255, 78, 78, 250)
+            elif (
+                self.map_name not in ("Raeuber & Bulle", "Insignien-Diebstahl")
+                and getattr(pl, "finished", False)
+                and getattr(pl, "finish_time", 0.0)
+                and now - float(pl.finish_time) < 4.0
+            ):
+                place = getattr(pl, "finish_place", None)
+                place_txt = f"PLATZ {place}" if place else "ZIEL"
+                lines = ("ZIEL ERREICHT", place_txt)
+                accent = QColor(255, 220, 70, 250)
+
+            if not lines:
+                continue
+
+            panel_w = max(280, min(max(360, int(rw * 0.52)), max(280, rw - 36)))
+            panel_h = 112
+            x = rx + (rw - panel_w) // 2
+            y = ry + (rh - panel_h) // 2
+
+            p.setPen(QPen(accent, 3))
+            p.setBrush(QColor(3, 6, 14, 205))
+            p.drawRoundedRect(x, y, panel_w, panel_h, 14, 14)
+            p.setPen(accent)
+            p.setFont(QFont("Arial", 28, QFont.Black))
+            p.drawText(x + 16, y + 18, panel_w - 32, 40, Qt.AlignCenter, lines[0])
+            p.setPen(QColor(255, 255, 255, 235))
+            p.setFont(QFont("Arial", 15, QFont.Bold))
+            p.drawText(x + 16, y + 62, panel_w - 32, 28, Qt.AlignCenter, lines[1])
         p.end()
 
     def _draw_minimap_overlay(self, w, h):
