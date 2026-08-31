@@ -317,20 +317,66 @@ class MainWindow(QMainWindow):
             return True
         if system == "linux":
             args = [str(target), "--auto-update", "--restart", "--wait-pid", pid]
-            if shutil.which("pkexec"):
-                subprocess.Popen(["pkexec", "env", "DISPLAY=" + os.environ.get("DISPLAY", ""), "XAUTHORITY=" + os.environ.get("XAUTHORITY", ""), *args], cwd=str(target.parent))
+            launcher = self._write_linux_update_launcher(target, args)
+            command = self._linux_terminal_command(launcher)
+            if command:
+                subprocess.Popen(command, cwd=str(target.parent))
                 return True
-            terminal = shutil.which("x-terminal-emulator") or shutil.which("gnome-terminal") or shutil.which("konsole") or shutil.which("xterm")
-            if terminal:
-                subprocess.Popen([terminal, "-e", *args], cwd=str(target.parent))
-                return True
-            subprocess.Popen(args, cwd=str(target.parent))
+            raise RuntimeError(
+                "Kein grafisches Terminal gefunden. Bitte installiere x-terminal-emulator, "
+                "gnome-terminal, konsole, xfce4-terminal oder xterm und starte das Update erneut."
+            )
             return True
         if system == "darwin":
             subprocess.Popen(["open", str(target)], cwd=str(target.parent))
             return False
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
         return False
+
+    def _write_linux_update_launcher(self, target, args):
+        target = Path(target)
+        launcher = target.parent / "start-wauzkart-update.sh"
+        quoted_args = " ".join("'" + str(arg).replace("'", "'\"'\"'") + "'" for arg in args)
+        script = f"""#!/usr/bin/env sh
+cd '{str(target.parent).replace("'", "'\"'\"'")}' || exit 1
+clear 2>/dev/null || true
+echo "Wauz Kart Update"
+echo "================"
+echo
+echo "Das Administrator-Passwort wird gleich im Terminal abgefragt."
+echo "Dieses Fenster bleibt offen, falls das Update fehlschlaegt."
+echo
+{quoted_args}
+status=$?
+echo
+if [ "$status" -ne 0 ]; then
+  echo "Wauz Kart Update ist fehlgeschlagen. Fehlercode: $status"
+  echo "Du kannst dieses Fenster offen lassen und die Meldung abschreiben."
+  printf "Enter druecken zum Schliessen..."
+  read _dummy
+fi
+exit "$status"
+"""
+        launcher.write_text(script, encoding="utf-8", newline="\n")
+        launcher.chmod(0o755)
+        return launcher
+
+    def _linux_terminal_command(self, launcher):
+        launcher = str(launcher)
+        candidates = [
+            ("x-terminal-emulator", ["x-terminal-emulator", "-e", "sh", launcher]),
+            ("gnome-terminal", ["gnome-terminal", "--", "sh", launcher]),
+            ("kgx", ["kgx", "--", "sh", launcher]),
+            ("konsole", ["konsole", "-e", "sh", launcher]),
+            ("xfce4-terminal", ["xfce4-terminal", "--command", f"sh '{launcher}'"]),
+            ("mate-terminal", ["mate-terminal", "--", "sh", launcher]),
+            ("lxterminal", ["lxterminal", "-e", "sh", launcher]),
+            ("xterm", ["xterm", "-e", "sh", launcher]),
+        ]
+        for binary, command in candidates:
+            if shutil.which(binary):
+                return command
+        return None
 
     def _stop_lan_session(self):
         if self._lan_session is not None:

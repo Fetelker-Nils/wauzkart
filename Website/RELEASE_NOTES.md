@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.34
+# Wauz Kart v1.0.35
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -47,6 +47,8 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Item-Auswahl, Angriffswarnung und Zielmeldung wurden als groessere Racing-HUD-Overlays verbessert
 - Start-Countdown `3, 2, 1, LOS!` erscheint jetzt gross in der Bildschirmmitte
 - Item-Auswahl-HUD wurde nochmal groesser und auffaelliger gemacht
+- Linux-Auto-Updates starten den Installer jetzt in einem Terminal statt per direktem `pkexec`
+- Linux-Update-Terminal bleibt bei Fehlern offen, damit Passwortabfrage und Fehlermeldungen sichtbar bleiben
 
 ## Download
 
