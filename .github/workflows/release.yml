@@ -30,7 +30,7 @@ jobs:
 
       - name: Build Windows EXE
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart --icon assets\icon.ico --paths src --hidden-import wauzkart.app --collect-submodules wauzkart --add-data "assets;assets" wauz_kart.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart --icon assets\icon.ico --paths src --hidden-import wauzkart.app --hidden-import wauzkart.ui.main_window --collect-submodules wauzkart --add-data "assets;assets" wauz_kart.py
           dist\wauzkart.exe --smoke-import
 
       - name: Prepare Windows installer
@@ -71,7 +71,7 @@ jobs:
 
       - name: Build Linux binary
         run: |
-          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --collect-submodules wauzkart --collect-submodules OpenGL --collect-data OpenGL --hidden-import OpenGL.platform.egl --hidden-import OpenGL.platform.glx --hidden-import OpenGL.platform.x11 --hidden-import OpenGL.platform.ctypesloader --hidden-import PyQt5.QtMultimedia --add-data "assets:assets" wauz_kart.py
+          pyinstaller --noconfirm --clean --onefile --windowed --name wauzkart-linux --paths src --hidden-import wauzkart.app --hidden-import wauzkart.ui.main_window --collect-submodules wauzkart --collect-submodules OpenGL --collect-data OpenGL --hidden-import OpenGL.platform.egl --hidden-import OpenGL.platform.glx --hidden-import OpenGL.platform.x11 --hidden-import OpenGL.platform.ctypesloader --hidden-import PyQt5.QtMultimedia --add-data "assets:assets" wauz_kart.py
           chmod +x dist/wauzkart-linux
           dist/wauzkart-linux --smoke-import
 
@@ -157,7 +157,7 @@ jobs:
 
       - name: Build macOS app
         run: |
-          pyinstaller --noconfirm --clean --windowed --name wauzkart-macos --paths src --hidden-import wauzkart.app --collect-submodules wauzkart --add-data "assets:assets" wauz_kart.py
+          pyinstaller --noconfirm --clean --windowed --name wauzkart-macos --paths src --hidden-import wauzkart.app --hidden-import wauzkart.ui.main_window --collect-submodules wauzkart --add-data "assets:assets" wauz_kart.py
           dist/wauzkart-macos.app/Contents/MacOS/wauzkart-macos --smoke-import
 
       - name: Package macOS DMG

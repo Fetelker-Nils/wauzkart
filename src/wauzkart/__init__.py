@@ -1,6 +1,6 @@
 """Wauz Kart game package."""
 
-__version__ = "1.0.37"
+__version__ = "1.0.38"
 
 def main():
     from .app import main as run_main

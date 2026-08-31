@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.37
+# Wauz Kart v1.0.38
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -52,6 +52,8 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Release-Build sammelt jetzt alle `wauzkart`-Submodule explizit ein, damit `wauzkart.ui.main_window` in Installer-Builds sicher enthalten ist
 - Entry-Point enthaelt jetzt einen direkten Import-Smoke-Test fuer `wauzkart.ui.main_window`
 - GitHub Actions startet jede gebaute Windows/Linux/macOS-App mit `--smoke-import`, bevor Installer veroeffentlicht werden
+- `wauzkart.ui.main_window` ist jetzt zusaetzlich als expliziter Hidden-Import in allen Release-Builds eingetragen
+- Der Smoke-Test prueft die Modul-Paketierung ohne GUI/OpenGL-Initialisierung, damit Linux/macOS-Builds nicht am Headless-Runner scheitern
 
 ## Download
 
