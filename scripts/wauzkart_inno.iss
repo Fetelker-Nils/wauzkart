@@ -1,5 +1,5 @@
 #define MyAppName "Wauz Kart"
-#define MyAppVersion "1.0.43"
+#define MyAppVersion "1.0.44"
 #define MyAppExeName "wauzkart.exe"
 
 [Setup]
@@ -43,4 +43,4 @@ Name: "{autodesktop}\Wauz Kart"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: 
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Wauz Kart starten"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\{#MyAppExeName}"; Flags: nowait runhidden skipifnotsilent
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait skipifnotsilent

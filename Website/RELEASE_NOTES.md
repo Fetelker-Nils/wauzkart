@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.43
+# Wauz Kart v1.0.44
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -66,6 +66,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - LAN-Clients uebernehmen Battle-Settings wie Teams, Runden und Rundentimer vom Host
 - Raeuber-&-Bulle-Scores, Rollen, Rundenstatus und Gefangenenstatus werden im LAN-Snapshot gespiegelt
 - Insignien-Diebstahl-KI plant jetzt seitliche Umwege, wenn die direkte Linie zum Ziel durch Hindernisse fuehrt
+- Windows-Auto-Update startet Wauz Kart nach der Installation wieder sichtbar statt im Hintergrund
 
 ## Download
 
