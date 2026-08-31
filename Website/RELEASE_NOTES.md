@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.42
+# Wauz Kart v1.0.43
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -62,6 +62,10 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Windows-Entry-Point nutzt bei installierten Builds den Ordner der EXE fuer den `src`-Suchpfad
 - Windows-Smoke-Test importiert jetzt `wauzkart.app` wirklich, statt nur nach dem Modulnamen zu suchen
 - Python-3.11-Syntaxfehler im Linux-Update-Launcher-F-String behoben
+- LAN/Online-Host kann jetzt auch `Raeuber & Bulle` und `Insignien-Diebstahl` starten
+- LAN-Clients uebernehmen Battle-Settings wie Teams, Runden und Rundentimer vom Host
+- Raeuber-&-Bulle-Scores, Rollen, Rundenstatus und Gefangenenstatus werden im LAN-Snapshot gespiegelt
+- Insignien-Diebstahl-KI plant jetzt seitliche Umwege, wenn die direkte Linie zum Ziel durch Hindernisse fuehrt
 
 ## Download
 

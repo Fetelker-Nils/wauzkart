@@ -415,6 +415,9 @@ exit "$status"
                 "car_styles": car_styles or [],
                 "characters": characters or [],
                 "track_size": track_size,
+                "teams": teams or [],
+                "rb_rounds": rb_rounds,
+                "rb_round_time": rb_round_time,
             }
             network_server = LanServer(num_humans, lan_settings, port=int(network_config.get("port", LAN_PORT)))
             network_server.start()
@@ -432,6 +435,9 @@ exit "$status"
             car_styles = settings.get("car_styles", car_styles or [])
             characters = settings.get("characters", characters or [])
             track_size = settings.get("track_size", track_size)
+            teams = settings.get("teams", teams or [])
+            rb_rounds = settings.get("rb_rounds", rb_rounds)
+            rb_round_time = settings.get("rb_round_time", rb_round_time)
             local_player_index = int(network_client.slot)
 
         wauz_audio.play_race_music()

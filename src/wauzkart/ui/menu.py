@@ -1865,15 +1865,6 @@ class MenuWidget(QWidget):
         msg.exec_()
 
     def _choose_mode(self, mode):
-        if self.network_mode == "host" and mode in ("Raeuber & Bulle", "Insignien-Diebstahl"):
-            msg = QMessageBox(self)
-            self._style_dialog(msg)
-            msg.setWindowTitle("LAN")
-            msg.setText("LAN geht aktuell nur fuer Rennen.")
-            msg.setInformativeText("Battle-Modi kommen spaeter im LAN dazu.")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
-            mode = "Rennen"
         self._reload_garage_unlocks()
         self.selected_mode = mode
         if mode == "Raeuber & Bulle":

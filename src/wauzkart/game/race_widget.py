@@ -634,6 +634,20 @@ class RaceWidget(QOpenGLWidget):
             "winner": self._player_index(self.winner) if self.winner is not None else None,
             "finish_counter": self.finish_counter,
             "game_timer": self.game_timer,
+            "rb": {
+                "score_blau": getattr(self, "rb_score_blau", 0),
+                "score_rot": getattr(self, "rb_score_rot", 0),
+                "round_index": getattr(self, "rb_round_index", None),
+                "total_rounds": getattr(self, "rb_total_rounds", None),
+                "role_blau": getattr(self, "rb_role_blau", None),
+                "role_rot": getattr(self, "rb_role_rot", None),
+                "winner_team": getattr(self, "rb_winner_team", None),
+                "between_rounds": getattr(self, "rb_between_rounds", False),
+                "last_round_winner": getattr(self, "rb_last_round_winner", None),
+                "last_round_index": getattr(self, "rb_last_round_index", None),
+                "button_hold": getattr(self, "rb_button_hold", 0.0),
+                "button_cooldown_until": getattr(self, "rb_button_cooldown_until", 0.0),
+            } if self.map_name == "Raeuber & Bulle" else None,
             "insignia": {
                 "holder": self.insignia_holder,
                 "pos": list(self.insignia_pos),
@@ -673,6 +687,7 @@ class RaceWidget(QOpenGLWidget):
             "hit_spin_degrees": float(pl.hit_spin_degrees),
             "hit_pop_height": float(pl.hit_pop_height),
             "rb_caught": bool(getattr(pl, "rb_caught", False)),
+            "rb_caught_at": getattr(pl, "rb_caught_at", None),
             "rb_color_team": getattr(pl, "rb_color_team", None),
             "insignia_score": float(getattr(pl, "insignia_score", 0.0)),
             "has_insignia": bool(getattr(pl, "has_insignia", False)),
@@ -692,6 +707,21 @@ class RaceWidget(QOpenGLWidget):
             self.winner = None
         self.finish_counter = int(snapshot.get("finish_counter", self.finish_counter) or 0)
         self.game_timer = snapshot.get("game_timer", self.game_timer)
+        rb = snapshot.get("rb")
+        if isinstance(rb, dict):
+            self.rb_score_blau = int(rb.get("score_blau", getattr(self, "rb_score_blau", 0)) or 0)
+            self.rb_score_rot = int(rb.get("score_rot", getattr(self, "rb_score_rot", 0)) or 0)
+            self.rb_round_index = rb.get("round_index", getattr(self, "rb_round_index", None))
+            self.rb_total_rounds = rb.get("total_rounds", getattr(self, "rb_total_rounds", None))
+            self.rb_role_blau = rb.get("role_blau", getattr(self, "rb_role_blau", None))
+            self.rb_role_rot = rb.get("role_rot", getattr(self, "rb_role_rot", None))
+            self.rb_winner_team = rb.get("winner_team", getattr(self, "rb_winner_team", None))
+            self.rb_between_rounds = bool(rb.get("between_rounds", getattr(self, "rb_between_rounds", False)))
+            self.rb_last_round_winner = rb.get("last_round_winner", getattr(self, "rb_last_round_winner", None))
+            self.rb_last_round_index = rb.get("last_round_index", getattr(self, "rb_last_round_index", None))
+            self.rb_button_hold = float(rb.get("button_hold", getattr(self, "rb_button_hold", 0.0)) or 0.0)
+            self.rb_button_cooldown_until = float(rb.get("button_cooldown_until", getattr(self, "rb_button_cooldown_until", 0.0)) or 0.0)
+            self._rb_apply_roles_to_players()
         insignia = snapshot.get("insignia")
         if isinstance(insignia, dict):
             self.insignia_holder = insignia.get("holder", self.insignia_holder)
@@ -742,6 +772,7 @@ class RaceWidget(QOpenGLWidget):
         pl.hit_spin_degrees = float(data.get("hit_spin_degrees", pl.hit_spin_degrees))
         pl.hit_pop_height = float(data.get("hit_pop_height", pl.hit_pop_height))
         pl.rb_caught = bool(data.get("rb_caught", getattr(pl, "rb_caught", False)))
+        pl.rb_caught_at = data.get("rb_caught_at", getattr(pl, "rb_caught_at", None))
         pl.rb_color_team = data.get("rb_color_team", getattr(pl, "rb_color_team", None))
         pl.insignia_score = float(data.get("insignia_score", getattr(pl, "insignia_score", 0.0)) or 0.0)
         pl.has_insignia = bool(data.get("has_insignia", getattr(pl, "has_insignia", False)))
@@ -1677,6 +1708,68 @@ class RaceWidget(QOpenGLWidget):
         
         return False, None
 
+    def _detour_target_around_obstacles(self, pl, tx, tz, half, margin):
+        if not self.obstacles:
+            return tx, tz
+
+        sx = float(pl.pos[0])
+        sz = float(pl.pos[2])
+        vx = float(tx) - sx
+        vz = float(tz) - sz
+        length2 = vx * vx + vz * vz
+        if length2 < 0.01:
+            return tx, tz
+
+        best = None
+        for ob in self.obstacles:
+            ox = float(ob.get("x", 0.0))
+            oz = float(ob.get("z", 0.0))
+            w = float(ob.get("w", 3.0))
+            l = float(ob.get("l", 3.0))
+            radius = max(w, l) * 0.5 + pl.radius + 4.0
+
+            to_x = ox - sx
+            to_z = oz - sz
+            t = _clamp((to_x * vx + to_z * vz) / length2, 0.0, 1.0)
+            closest_x = sx + vx * t
+            closest_z = sz + vz * t
+            dx = ox - closest_x
+            dz = oz - closest_z
+            dist2 = dx * dx + dz * dz
+            if dist2 > radius * radius:
+                continue
+            ahead = math.sqrt((closest_x - sx) ** 2 + (closest_z - sz) ** 2)
+            if best is None or ahead < best["ahead"]:
+                best = {"ob": ob, "ahead": ahead, "radius": radius}
+
+        if best is None:
+            return tx, tz
+
+        ob = best["ob"]
+        ox = float(ob.get("x", 0.0))
+        oz = float(ob.get("z", 0.0))
+        length = max(0.01, math.sqrt(length2))
+        right_x = vz / length
+        right_z = -vx / length
+        side = (ox - sx) * right_x + (oz - sz) * right_z
+        side_dir = -1.0 if side > 0 else 1.0
+        offset = best["radius"] + 7.0
+
+        candidates = []
+        for mul in (side_dir, -side_dir):
+            cx = ox + right_x * offset * mul
+            cz = oz + right_z * offset * mul
+            cx = _clamp(cx, -half + margin, half - margin)
+            cz = _clamp(cz, -half + margin, half - margin)
+            if not self._is_point_blocked_by_obstacle(cx, cz, buffer=2.0):
+                score = (cx - tx) * (cx - tx) + (cz - tz) * (cz - tz)
+                candidates.append((score, cx, cz))
+
+        if not candidates:
+            return tx, tz
+        candidates.sort(key=lambda item: item[0])
+        return candidates[0][1], candidates[0][2]
+
     def _update_insignia_ai(self, pl, dt):
         now = time.time()
         holder = self._insignia_holder_player()
@@ -1721,6 +1814,7 @@ class RaceWidget(QOpenGLWidget):
         tx += avoid_x
         tz += avoid_z
 
+        tx, tz = self._detour_target_around_obstacles(pl, tx, tz, half, margin)
         tx = _clamp(tx, -half + margin, half - margin)
         tz = _clamp(tz, -half + margin, half - margin)
         dx = tx - pl.pos[0]
