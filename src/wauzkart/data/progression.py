@@ -482,6 +482,8 @@ class RaceLogger:
             fps=getattr(HighlightRecorder, "FPS", 30),
             best_index=best_index,
             last_index=last_index,
+            map_name=data.get('map_name'),
+            events=data.get('events', []),
         )
         if not cinematic_frames:
             indices = build_highlight_indices(
@@ -493,6 +495,8 @@ class RaceLogger:
                 close_call_frames=data.get('close_call_frames', []),
                 fps=getattr(HighlightRecorder, "FPS", 30),
                 max_frames=getattr(HighlightRecorder, "MAX_HIGHLIGHT_FRAMES", 3600),
+                map_name=data.get('map_name'),
+                events=data.get('events', []),
             )
             cinematic_frames = [frames[i] for i in indices]
         return cinematic_frames, remap_events(data.get('events', []), frame_numbers, indices)

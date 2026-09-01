@@ -13,10 +13,11 @@ class HighlightRecorder:
     MAX_HIGHLIGHT_FRAMES = HIGHLIGHT_SECONDS * FPS
     HIGHLIGHT_WINDOW = 8 * FPS
 
-    def __init__(self):
+    def __init__(self, map_name=None):
         self.frames = []
         self.frame_numbers = []
         self.events = []
+        self.map_name = map_name
         self.recording = False
         self.highlight_start = 0
         self.last_event_frame = -999
@@ -69,9 +70,10 @@ class HighlightRecorder:
         if not self.recording: return
         self.close_call_frames.append(frame_idx)
 
-    def get_highlight(self, best_index=0, last_index=None):
+    def get_highlight(self, best_index=0, last_index=None, map_name=None):
         if not self.frames:
             return [], []
+        mode_name = map_name or getattr(self, "map_name", None)
         frames, indices = build_cinematic_highlight(
             self.frames,
             self.frame_numbers,
@@ -82,6 +84,8 @@ class HighlightRecorder:
             fps=self.FPS,
             best_index=best_index,
             last_index=last_index,
+            map_name=mode_name,
+            events=self.events,
         )
         if frames:
             return frames, remap_events(self.events, self.frame_numbers, indices)
@@ -95,6 +99,8 @@ class HighlightRecorder:
             close_call_frames=self.close_call_frames,
             fps=self.FPS,
             max_frames=self.MAX_HIGHLIGHT_FRAMES,
+            map_name=mode_name,
+            events=self.events,
         )
         final_frames = [self.frames[i] for i in indices]
         return final_frames, remap_events(self.events, self.frame_numbers, indices)
@@ -169,6 +175,38 @@ def _append_cinematic_segment(out_frames, out_indices, frames, indices, focus, m
         out_indices.append(idx)
 
 
+def _event_frame_numbers(events, event_type):
+    found = []
+    for event in events or []:
+        if isinstance(event, dict):
+            if event.get("type") == event_type:
+                frame_no = event.get("frame", event.get("frame_idx"))
+                if frame_no is not None:
+                    found.append(frame_no)
+            continue
+        try:
+            frame_no, typ = event[:2]
+        except Exception:
+            continue
+        if typ == event_type:
+            found.append(frame_no)
+    return found
+
+
+def _event_focus_index(events, event_type, default=0):
+    for event in events or []:
+        if not isinstance(event, dict) or event.get("type") != event_type:
+            continue
+        for key in ("player", "target", "attacker"):
+            try:
+                value = event.get(key)
+                if value is not None:
+                    return int(value)
+            except Exception:
+                continue
+    return default
+
+
 def _window_indices(center, before, after, total):
     if total <= 0:
         return []
@@ -178,7 +216,7 @@ def _window_indices(center, before, after, total):
 
 def build_cinematic_highlight(frames, frame_numbers=None, *, crash_frames=None, overtake_frames=None,
                               finish_frames=None, close_call_frames=None, fps=30,
-                              best_index=0, last_index=None):
+                              best_index=0, last_index=None, map_name=None, events=None):
     total = len(frames or [])
     if total <= 0:
         return [], []
@@ -193,6 +231,27 @@ def build_cinematic_highlight(frames, frame_numbers=None, *, crash_frames=None, 
 
     out_frames = []
     out_indices = []
+
+    if map_name == "Raeuber & Bulle":
+        return build_rb_cinematic_highlight(
+            frames,
+            frame_numbers,
+            crash_frames=crash_frames,
+            finish_frames=finish_frames,
+            fps=fps,
+            best_index=best_index,
+            events=events,
+        )
+
+    if map_name == "Insignien-Diebstahl":
+        return build_insignia_cinematic_highlight(
+            frames,
+            frame_numbers,
+            crash_frames=crash_frames,
+            fps=fps,
+            best_index=best_index,
+            events=events,
+        )
 
     # 1) First 3 seconds from the best player.
     intro_len = min(total, max(1, int(3 * fps)))
@@ -268,6 +327,80 @@ def build_cinematic_highlight(frames, frame_numbers=None, *, crash_frames=None, 
     return out_frames, out_indices
 
 
+def build_rb_cinematic_highlight(frames, frame_numbers=None, *, crash_frames=None,
+                                 finish_frames=None, fps=30, best_index=0, events=None):
+    total = len(frames or [])
+    if total <= 0:
+        return [], []
+    if not frame_numbers or len(frame_numbers) != total:
+        frame_numbers = list(range(total))
+
+    capture_frames = _event_frame_numbers(events, "rb_capture") or list(crash_frames or [])
+    free_frames = _event_frame_numbers(events, "rb_free")
+    capture_focus = _event_focus_index(events, "rb_capture", best_index)
+    free_focus = _event_focus_index(events, "rb_free", best_index)
+
+    out_frames = []
+    out_indices = []
+
+    intro_len = min(total, max(1, int(3.0 * fps)))
+    _append_cinematic_segment(out_frames, out_indices, frames, range(0, intro_len), best_index, "wide", fps, fade_in=False, fade_out=True)
+
+    if capture_frames:
+        center = _nearest_recorded_index(frame_numbers, capture_frames[0], fps * 5)
+        if center is not None:
+            _append_cinematic_segment(out_frames, out_indices, frames, _window_indices(center, int(2.0 * fps), int(2.6 * fps), total), capture_focus, "follow", fps, fade_in=True, fade_out=True)
+
+    if free_frames:
+        center = _nearest_recorded_index(frame_numbers, free_frames[0], fps * 5)
+        if center is not None:
+            _append_cinematic_segment(out_frames, out_indices, frames, _window_indices(center, int(1.8 * fps), int(2.8 * fps), total), free_focus, "wide", fps, fade_in=True, fade_out=True)
+
+    last_capture = capture_frames[-1] if capture_frames else None
+    if last_capture is not None and (not free_frames or last_capture != capture_frames[0]):
+        center = _nearest_recorded_index(frame_numbers, last_capture, fps * 5)
+        if center is not None:
+            _append_cinematic_segment(out_frames, out_indices, frames, _window_indices(center, int(1.4 * fps), int(2.4 * fps), total), capture_focus, "follow", fps, fade_in=True, fade_out=True)
+
+    final_center = _nearest_recorded_index(frame_numbers, finish_frames[0], fps * 6) if finish_frames else total - 1
+    final_center = total - 1 if final_center is None else final_center
+    _append_cinematic_segment(out_frames, out_indices, frames, range(max(0, final_center - int(4.0 * fps)), min(total, final_center + int(1.0 * fps) + 1)), best_index, "wide", fps, fade_in=True, fade_out=False)
+    return out_frames, out_indices
+
+
+def build_insignia_cinematic_highlight(frames, frame_numbers=None, *, crash_frames=None,
+                                       fps=30, best_index=0, events=None):
+    total = len(frames or [])
+    if total <= 0:
+        return [], []
+    if not frame_numbers or len(frame_numbers) != total:
+        frame_numbers = list(range(total))
+
+    steal_frames = _event_frame_numbers(events, "insignia_steal")
+    steal_focus = _event_focus_index(events, "insignia_steal", best_index)
+
+    out_frames = []
+    out_indices = []
+    intro_len = min(total, max(1, int(3.0 * fps)))
+    _append_cinematic_segment(out_frames, out_indices, frames, range(0, intro_len), best_index, "wide", fps, fade_in=False, fade_out=True)
+
+    for pos, frame_no in enumerate(steal_frames[:3]):
+        center = _nearest_recorded_index(frame_numbers, frame_no, fps * 5)
+        if center is None:
+            continue
+        mode = "follow" if pos % 2 == 0 else "wide"
+        _append_cinematic_segment(out_frames, out_indices, frames, _window_indices(center, int(1.6 * fps), int(2.6 * fps), total), steal_focus, mode, fps, fade_in=True, fade_out=True)
+
+    if crash_frames:
+        center = _nearest_recorded_index(frame_numbers, crash_frames[0], fps * 5)
+        if center is not None:
+            _append_cinematic_segment(out_frames, out_indices, frames, _window_indices(center, int(1.4 * fps), int(2.2 * fps), total), best_index, "follow", fps, fade_in=True, fade_out=True)
+
+    final_start = max(0, total - int(5.0 * fps))
+    _append_cinematic_segment(out_frames, out_indices, frames, range(final_start, total), best_index, "wide", fps, fade_in=True, fade_out=False)
+    return out_frames, out_indices
+
+
 def _nearest_recorded_index(frame_numbers, frame_no, max_distance=None):
     if not frame_numbers:
         return None
@@ -302,7 +435,8 @@ def _spread_indices(total, count):
 
 
 def build_highlight_indices(total, frame_numbers=None, *, crash_frames=None, overtake_frames=None,
-                            finish_frames=None, close_call_frames=None, fps=30, max_frames=3600):
+                            finish_frames=None, close_call_frames=None, fps=30, max_frames=3600,
+                            map_name=None, events=None):
     if total <= 0:
         return []
     if not frame_numbers or len(frame_numbers) != total:
@@ -322,6 +456,17 @@ def build_highlight_indices(total, frame_numbers=None, *, crash_frames=None, ove
     for abs_idx in close_call_frames or []:
         center = _nearest_recorded_index(frame_numbers, abs_idx, max_event_distance)
         _add_window(selected, center, 3 * fps, 5 * fps, total)
+    if map_name == "Raeuber & Bulle":
+        for abs_idx in _event_frame_numbers(events, "rb_capture"):
+            center = _nearest_recorded_index(frame_numbers, abs_idx, max_event_distance)
+            _add_window(selected, center, 4 * fps, 5 * fps, total)
+        for abs_idx in _event_frame_numbers(events, "rb_free"):
+            center = _nearest_recorded_index(frame_numbers, abs_idx, max_event_distance)
+            _add_window(selected, center, 4 * fps, 5 * fps, total)
+    elif map_name == "Insignien-Diebstahl":
+        for abs_idx in _event_frame_numbers(events, "insignia_steal"):
+            center = _nearest_recorded_index(frame_numbers, abs_idx, max_event_distance)
+            _add_window(selected, center, 4 * fps, 5 * fps, total)
     for abs_idx in finish_frames or []:
         center = _nearest_recorded_index(frame_numbers, abs_idx, max_event_distance)
         _add_window(selected, center, 8 * fps, 4 * fps, total)
@@ -352,6 +497,14 @@ def remap_events(events, frame_numbers, selected_indices):
     remapped = []
     max_event_distance = max(2, HighlightRecorder.FPS * 3)
     for event in events:
+        if isinstance(event, dict):
+            frame_no = event.get("frame", event.get("frame_idx"))
+            old_idx = _nearest_recorded_index(frame_numbers, frame_no, max_event_distance) if frame_no is not None else None
+            if old_idx in selected_lookup:
+                copied = copy.deepcopy(event)
+                copied["frame"] = selected_lookup[old_idx]
+                remapped.append(copied)
+            continue
         try:
             frame_no, typ, pos = event[:3]
         except Exception:

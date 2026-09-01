@@ -569,7 +569,7 @@ exit "$status"
                 if place is not None and int(place) >= last_place:
                     last_place = int(place)
                     last_index = i
-            highlight_frames, highlight_events = recorder.get_highlight(best_index=best_index, last_index=last_index) if recorder is not None else (frames, events)
+            highlight_frames, highlight_events = recorder.get_highlight(best_index=best_index, last_index=last_index, map_name=map_name) if recorder is not None else (frames, events)
         except Exception:
             highlight_frames, highlight_events = frames, events
         if not highlight_frames:

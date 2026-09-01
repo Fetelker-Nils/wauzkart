@@ -274,7 +274,7 @@ class RaceWidget(QOpenGLWidget):
         self.last_positions = []
         self.pending_attacks = []  # flying item attacks
 
-        self.recorder = HighlightRecorder()
+        self.recorder = HighlightRecorder(map_name=map_name)
         self.recorder.start()
 
         # Raeuber & Bulle Timer
@@ -940,6 +940,14 @@ class RaceWidget(QOpenGLWidget):
                         self.rb_button_hold = 0.0
                         self.rb_button_cooldown_until = now + 12.0
                         freer_team = None
+                        freer_index = None
+                        for idx, candidate in enumerate(self.players):
+                            if candidate.team == "raeuber" and not candidate.rb_caught:
+                                dx = candidate.pos[0] - button_x
+                                dz = candidate.pos[2] - button_z
+                                if math.sqrt(dx * dx + dz * dz) < self.rb_button_radius:
+                                    freer_index = idx
+                                    break
                         unlock_badge("rb_free_someone")
                         try:
                             frees = badge_store.inc("rb_frees_total", 1)
@@ -981,6 +989,10 @@ class RaceWidget(QOpenGLWidget):
                             self.rb_frees_blau += 1
                         elif freer_team == "rot":
                             self.rb_frees_rot += 1
+                        try:
+                            self.recorder.events.append({"type": "rb_free", "frame": self.frame_idx, "player": freer_index if freer_index is not None else 0})
+                        except Exception:
+                            pass
                     else:
                         # optional: wenn geblockt oder keiner drauf steht, nichts aufladen
                         self.rb_button_hold = 0.0
@@ -3740,6 +3752,15 @@ class RaceWidget(QOpenGLWidget):
         mid = [raeuber.pos[0], raeuber.pos[1] + 0.3, raeuber.pos[2]]
         for _ in range(18):
             raeuber.particles.append(Particle(mid[:], color=(0.25, 0.65, 1.0), speed=0.12, size=0.14, life=0.75))
+        try:
+            self.recorder.events.append({
+                "type": "rb_capture",
+                "frame": self.frame_idx,
+                "attacker": self._player_index(bulle),
+                "target": self._player_index(raeuber),
+            })
+        except Exception:
+            pass
         return True
 
     def _rb_apply_roles_to_players(self):
@@ -3848,6 +3869,10 @@ class RaceWidget(QOpenGLWidget):
                 pl.finish_time = now
                 self.finish_counter += 1
                 pl.finish_place = self.finish_counter
+        try:
+            self.recorder.record_finish(self.frame_idx)
+        except Exception:
+            pass
 
         if self.on_race_over:
             self.on_race_over(self.players, self.recorder, self.recorder.frames, self.recorder.events)
