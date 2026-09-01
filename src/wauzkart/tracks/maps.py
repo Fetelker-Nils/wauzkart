@@ -388,26 +388,29 @@ MAPS = {
     },
     "Raeuber & Bulle": {
         "name": "Raeuber & Bulle",
-        "description": "Offene quadratische Flche fuer Teamspiel  Gefaengnis in der Mitte, freie Fahrt!",
+        "description": "Battle-Arena mit Bullen, Raeubern, Gefaengnis, Freilass-Schalter und Items.",
         "unlock_level": 1,
         "config": {
             "type": "open_square",
             "outer_mod": lambda a: 1.0,  # Keine Modifikation, flache Flche
             "inner_mod": lambda a: 0.0,
-            "outer_base": 110,  # Grere Spielflche (Radius)
+            "outer_base": 110,  # Groessere Spielflaeche
             "inner_base": 0,
             "width_factor": 1.0,
             "obstacles": [
-                {"x": 0, "z": 10, "w": 10, "l": 5, "h": 2, "color": (0.5, 0.5, 0.5)},  # Gefaengnis
+                {"x": 0, "z": 10, "w": 12, "l": 7, "h": 2.4, "color": (0.35, 0.38, 0.45)},  # Gefaengnis
                 {"x": 0, "z": 5, "w": 2, "l": 2, "h": 1, "color": (0, 1, 0)},  # Freilass-Knopf
                 # Mauern fuer Bereiche (am Rand der sichtbaren Map)
                 {"x": -110, "z": 0, "w": 2, "l": 220, "h": 3, "color": (0.6, 0.6, 0.6)},  # Vertikale Mauer links
                 {"x": 110, "z": 0, "w": 2, "l": 220, "h": 3, "color": (0.6, 0.6, 0.6)},   # Vertikale Mauer rechts
                 {"x": 0, "z": -110, "w": 220, "l": 2, "h": 3, "color": (0.6, 0.6, 0.6)},  # Horizontale Mauer unten
                 {"x": 0, "z": 110, "w": 220, "l": 2, "h": 3, "color": (0.6, 0.6, 0.6)},   # Horizontale Mauer oueben
-                # Zustzliche Hindernisse
-                {"x": -55, "z": 55, "w": 6, "l": 6, "h": 2, "color": (0.8, 0.4, 0.4)},  # Rote Box
-                {"x": 55, "z": -55, "w": 6, "l": 6, "h": 2, "color": (0.4, 0.8, 0.4)},  # Grne Box
+                {"x": -56, "z": 48, "w": 8, "l": 22, "h": 2.6, "color": (0.56, 0.18, 0.18)},
+                {"x": 56, "z": -48, "w": 8, "l": 22, "h": 2.6, "color": (0.16, 0.42, 0.62)},
+                {"x": -42, "z": -46, "w": 24, "l": 7, "h": 2.2, "color": (0.55, 0.50, 0.38)},
+                {"x": 42, "z": 46, "w": 24, "l": 7, "h": 2.2, "color": (0.55, 0.50, 0.38)},
+                {"x": -18, "z": 62, "w": 14, "l": 5, "h": 1.5, "color": (0.85, 0.66, 0.18)},
+                {"x": 18, "z": -62, "w": 14, "l": 5, "h": 1.5, "color": (0.85, 0.66, 0.18)},
             ],
             "start_positions": [
                 (10, 10, 225), (15, 10, 225), (20, 10, 225), (25, 10, 225), (30, 10, 225), (35, 10, 225),  # Raeuber
@@ -415,10 +418,16 @@ MAPS = {
             ],
             "parking_spots": [],
             "item_boxes": [
-                {"x": 80, "z": 80},
-                {"x": -80, "z": -80},
-                {"x": 0, "z": 80},
-                {"x": 80, "z": 0},
+                {"x": 78, "z": 78},
+                {"x": -78, "z": -78},
+                {"x": -78, "z": 78},
+                {"x": 78, "z": -78},
+                {"x": 0, "z": 82},
+                {"x": 0, "z": -82},
+                {"x": 82, "z": 0},
+                {"x": -82, "z": 0},
+                {"x": -34, "z": 26},
+                {"x": 34, "z": -26},
             ],
         }
     },

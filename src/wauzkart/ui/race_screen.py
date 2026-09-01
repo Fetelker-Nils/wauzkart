@@ -424,7 +424,11 @@ class RaceScreen(QWidget):
             r_total = getattr(gl, "rb_total_rounds", 4)
             sb = int(getattr(gl, "rb_score_blau", 0))
             sr = int(getattr(gl, "rb_score_rot", 0))
-            timer_text += f" | Runde: {r_idx}/{r_total} | Punkte: {sb} {sr}"
+            cb = int(getattr(gl, "rb_catches_blau", 0))
+            cr = int(getattr(gl, "rb_catches_rot", 0))
+            fb = int(getattr(gl, "rb_frees_blau", 0))
+            fr = int(getattr(gl, "rb_frees_rot", 0))
+            timer_text += f" | Runde: {r_idx}/{r_total} | Satz: BLAU {sb} ROT {sr} | Fang: {cb}:{cr} | Frei: {fb}:{fr}"
             self.lbl_timer.setText(timer_text)
             self.lbl_timer.setVisible(True)
         else:

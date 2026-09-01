@@ -302,15 +302,21 @@ class RaceWidget(QOpenGLWidget):
         self.rb_button_hold = 0.0
         self.rb_button_cooldown_until = 0.0
         self.rb_catch_radius = 4.2
+        self.rb_capture_angle = 70.0
         self.rb_jail_pos = (0.0, 10.0)
+        self.rb_jail_slots = [(-3.2, 8.8), (0.0, 8.8), (3.2, 8.8), (-3.2, 11.4), (0.0, 11.4), (3.2, 11.4)]
         self.rb_guard_radius = 4.0
+        self.rb_catches_blau = 0
+        self.rb_catches_rot = 0
+        self.rb_frees_blau = 0
+        self.rb_frees_rot = 0
 
-        # Power-ups / Items (fuer Raeuber & Bulle deaktiviert)
-        self.powerups_enabled = (map_name != "Raeuber & Bulle")
+        # Power-ups / Items: Battle-Modi nutzen feste Item-Boxen, aber weniger freie Drops.
+        self.powerups_enabled = True
 
         self.items = []
         self.powerup_spawn_interval = 5.5 if self.insignia_mode else 2.5
-        self.max_powerups = (7 if self.insignia_mode else 16) if self.powerups_enabled else 0
+        self.max_powerups = 7 if self.insignia_mode else (0 if map_name == "Raeuber & Bulle" else 16)
         self.next_powerup_spawn_time = (time.time() + 1.0) if self.powerups_enabled else float("inf")
 
         # Item-Boxen (feste Pltze) + initiale Power-ups
@@ -319,8 +325,11 @@ class RaceWidget(QOpenGLWidget):
         self.item_box_item_pool = []
         if self.powerups_enabled:
             self._init_item_boxes()
-            self.item_box_item_pool = ["abknaller", "turbo", "wirbler", "schild", "frost", "oelspur"]
-            for _ in range(3 if self.insignia_mode else 10):
+            if map_name == "Raeuber & Bulle":
+                self.item_box_item_pool = ["turbo", "schild", "frost", "wirbler", "oelspur", "abknaller"]
+            else:
+                self.item_box_item_pool = ["abknaller", "turbo", "wirbler", "schild", "frost", "oelspur"]
+            for _ in range(3 if self.insignia_mode else (0 if map_name == "Raeuber & Bulle" else 10)):
                 self._spawn_random_powerup()
 
         self.on_race_over = None  # callback  MainWindow
@@ -388,7 +397,7 @@ class RaceWidget(QOpenGLWidget):
         now = time.time()
         if getattr(pl, "is_ai", False) or getattr(pl, "finished", False):
             return False
-        if self.map_name == "Raeuber & Bulle" or not getattr(self, "powerups_enabled", True):
+        if not getattr(self, "powerups_enabled", True):
             return False
         if not pl.pending_item:
             return False
@@ -647,6 +656,10 @@ class RaceWidget(QOpenGLWidget):
                 "last_round_index": getattr(self, "rb_last_round_index", None),
                 "button_hold": getattr(self, "rb_button_hold", 0.0),
                 "button_cooldown_until": getattr(self, "rb_button_cooldown_until", 0.0),
+                "catches_blau": getattr(self, "rb_catches_blau", 0),
+                "catches_rot": getattr(self, "rb_catches_rot", 0),
+                "frees_blau": getattr(self, "rb_frees_blau", 0),
+                "frees_rot": getattr(self, "rb_frees_rot", 0),
             } if self.map_name == "Raeuber & Bulle" else None,
             "insignia": {
                 "holder": self.insignia_holder,
@@ -721,6 +734,10 @@ class RaceWidget(QOpenGLWidget):
             self.rb_last_round_index = rb.get("last_round_index", getattr(self, "rb_last_round_index", None))
             self.rb_button_hold = float(rb.get("button_hold", getattr(self, "rb_button_hold", 0.0)) or 0.0)
             self.rb_button_cooldown_until = float(rb.get("button_cooldown_until", getattr(self, "rb_button_cooldown_until", 0.0)) or 0.0)
+            self.rb_catches_blau = int(rb.get("catches_blau", getattr(self, "rb_catches_blau", 0)) or 0)
+            self.rb_catches_rot = int(rb.get("catches_rot", getattr(self, "rb_catches_rot", 0)) or 0)
+            self.rb_frees_blau = int(rb.get("frees_blau", getattr(self, "rb_frees_blau", 0)) or 0)
+            self.rb_frees_rot = int(rb.get("frees_rot", getattr(self, "rb_frees_rot", 0)) or 0)
             self._rb_apply_roles_to_players()
         insignia = snapshot.get("insignia")
         if isinstance(insignia, dict):
@@ -883,29 +900,10 @@ class RaceWidget(QOpenGLWidget):
                 for bulle in self.players:
                     if bulle.team == "bulle":
                         for raeuber in self.players:
-                            if raeuber.team == "raeuber" and not raeuber.rb_caught and not raeuber.finished:
-                                dx = raeuber.pos[0] - bulle.pos[0]
-                                dz = raeuber.pos[2] - bulle.pos[2]
-                                dist = math.sqrt(dx**2 + dz**2)
-                                if dist < self.rb_catch_radius and now > raeuber.shield_until:
-                                    # Raeuber ins Gefaengnis teleportieren
-                                    raeuber.rb_caught = True
-                                    raeuber.rb_caught_at = now
-                                    raeuber.pos[0] = self.rb_jail_pos[0]
-                                    raeuber.pos[2] = self.rb_jail_pos[1]
-                                    raeuber.rot = 180  # Nach Sden schauen
-                                    raeuber.velocity = 0
-                                    unlock_badge("rb_catch_robber")
-                                    try:
-                                        catches = badge_store.inc("rb_catches_total", 1)
-                                        if int(catches or 0) >= 5:
-                                            unlock_badge("rb_hunter")
-                                    except Exception:
-                                        pass
-                                    # berprfe, ob alle Raeuber gefangen
-                                    all_caught = all(getattr(p, "rb_caught", False) for p in self.players if p.team == "raeuber")
-                                    if all_caught:
-                                        self._end_race_bulle_win()
+                            if self._rb_try_capture(bulle, raeuber, now, require_front=True):
+                                all_caught = all(getattr(p, "rb_caught", False) for p in self.players if p.team == "raeuber")
+                                if all_caught:
+                                    self._end_race_bulle_win()
                 
                 # Freilassung: Raeuber muss den gruenen Knopf kurz "halten" (Cooldown + Bullen koennen blocken)
                 any_caught = any(p.team == "raeuber" and p.rb_caught for p in self.players)
@@ -941,6 +939,7 @@ class RaceWidget(QOpenGLWidget):
                     if robber_on_button and not hard_block:
                         self.rb_button_hold = 0.0
                         self.rb_button_cooldown_until = now + 12.0
+                        freer_team = None
                         unlock_badge("rb_free_someone")
                         try:
                             frees = badge_store.inc("rb_frees_total", 1)
@@ -971,12 +970,17 @@ class RaceWidget(QOpenGLWidget):
                         # Alle gefangenen Raeuber befreien
                         for raeuber in self.players:
                             if raeuber.team == "raeuber" and raeuber.rb_caught:
+                                freer_team = getattr(raeuber, "rb_color_team", freer_team)
                                 raeuber.rb_caught = False
                                 raeuber.rb_caught_at = None
                                 raeuber.pos[0], raeuber.pos[2] = safe_spawn_point()
                                 raeuber.rot = random.uniform(0, 360)
                                 raeuber.velocity = 0
                                 raeuber.shield_until = now + 3.5
+                        if freer_team == "blau":
+                            self.rb_frees_blau += 1
+                        elif freer_team == "rot":
+                            self.rb_frees_rot += 1
                     else:
                         # optional: wenn geblockt oder keiner drauf steht, nichts aufladen
                         self.rb_button_hold = 0.0
@@ -1848,6 +1852,10 @@ class RaceWidget(QOpenGLWidget):
             if getattr(pl, "rb_caught", False) or pl.finished:
                 pl.velocity = 0
                 return
+            if self._avoid_obstacles_ai(pl, dt):
+                return
+            if self._avoid_cars_ai(pl, dt):
+                return
 
             any_caught = any(p.team == "raeuber" and getattr(p, "rb_caught", False) for p in self.players)
             button_x, button_z = self.rb_button_pos
@@ -2472,6 +2480,12 @@ class RaceWidget(QOpenGLWidget):
     def _collision(self, p1, p2):
         if p1.finished or p2.finished:
             return
+        if self.map_name == "Raeuber & Bulle":
+            pair = {getattr(p1, "team", None), getattr(p2, "team", None)}
+            if pair == {"bulle", "raeuber"} and not getattr(p1, "rb_caught", False) and not getattr(p2, "rb_caught", False):
+                p1.velocity *= 0.45
+                p2.velocity *= 0.45
+                return
         dx = p1.pos[0]-p2.pos[0]; dz = p1.pos[2]-p2.pos[2]
         dist = math.sqrt(dx*dx + dz*dz)
         if dist < p1.radius + p2.radius:
@@ -2597,6 +2611,10 @@ class RaceWidget(QOpenGLWidget):
         for other in self.players:
             if other is pl or other.finished:
                 continue
+            if self.map_name == "Raeuber & Bulle":
+                same_color_team = getattr(other, "rb_color_team", None) == getattr(pl, "rb_color_team", None)
+                if not same_color_team:
+                    continue
 
             dx = other.pos[0] - pl.pos[0]
             dz = other.pos[2] - pl.pos[2]
@@ -2840,6 +2858,11 @@ class RaceWidget(QOpenGLWidget):
                 self._apply_wirbler_effect(target, now)
             elif attack_type == "frost":
                 self._apply_frost_effect(target, now)
+            if self.map_name == "Raeuber & Bulle" and attacker is not None:
+                if self._rb_try_capture(attacker, target, now, require_front=False):
+                    all_caught = all(getattr(p, "rb_caught", False) for p in self.players if p.team == "raeuber")
+                    if all_caught:
+                        self._end_race_bulle_win()
             if self.insignia_mode and attacker is not None:
                 self._try_steal_insignia(attacker, target, now, force=True)
 
@@ -2941,6 +2964,11 @@ class RaceWidget(QOpenGLWidget):
         for other in self.players:
             if other is player or other.finished:
                 continue
+            if self.map_name == "Raeuber & Bulle":
+                if getattr(other, "rb_caught", False):
+                    continue
+                if getattr(other, "rb_color_team", None) == getattr(player, "rb_color_team", None):
+                    continue
             dx = other.pos[0] - player.pos[0]
             dz = other.pos[2] - player.pos[2]
             dist2 = dx * dx + dz * dz
@@ -3168,6 +3196,7 @@ class RaceWidget(QOpenGLWidget):
             "schild": "Schild",
             "frost": "Frost",
             "oelspur": "Oelspur",
+            "festnahme": "Festnahme",
         }
         return names.get(item_id, str(item_id))
 
@@ -3645,6 +3674,72 @@ class RaceWidget(QOpenGLWidget):
         # Reset button state each round
         self.rb_button_hold = 0.0
         self.rb_button_cooldown_until = 0.0
+        self.pending_attacks = []
+        self.oil_slicks = []
+
+    def _rb_jail_slot_for(self, player):
+        slots = getattr(self, "rb_jail_slots", None) or [(0.0, 10.0)]
+        caught = [p for p in self.players if p is not player and getattr(p, "team", None) == "raeuber" and getattr(p, "rb_caught", False)]
+        return slots[len(caught) % len(slots)]
+
+    def _rb_try_capture(self, bulle, raeuber, now, require_front=True):
+        if self.map_name != "Raeuber & Bulle":
+            return False
+        if bulle is raeuber:
+            return False
+        if getattr(bulle, "team", None) != "bulle" or getattr(raeuber, "team", None) != "raeuber":
+            return False
+        if getattr(raeuber, "rb_caught", False) or getattr(raeuber, "finished", False):
+            return False
+        if getattr(bulle, "finished", False) or getattr(bulle, "crash_timer", 0.0) > now:
+            return False
+        if now <= getattr(raeuber, "shield_until", 0.0):
+            return False
+
+        dx = raeuber.pos[0] - bulle.pos[0]
+        dz = raeuber.pos[2] - bulle.pos[2]
+        dist = math.sqrt(dx * dx + dz * dz)
+        if require_front and dist > self.rb_catch_radius:
+            return False
+        if require_front:
+            target_rot = math.degrees(math.atan2(dx, dz))
+            diff = (target_rot - bulle.rot + 360.0) % 360.0
+            if diff > 180.0:
+                diff -= 360.0
+            if abs(diff) > self.rb_capture_angle and dist > 1.55:
+                return False
+
+        jail_x, jail_z = self._rb_jail_slot_for(raeuber)
+        raeuber.rb_caught = True
+        raeuber.rb_caught_at = now
+        raeuber.pos[0] = jail_x
+        raeuber.pos[2] = jail_z
+        raeuber.rot = 180
+        raeuber.velocity = 0.0
+        raeuber.pending_item = None
+        raeuber.item_roulette_show_until = 0.0
+        raeuber.incoming_attack_type = "festnahme"
+        raeuber.incoming_attack_from = bulle.name
+        raeuber.incoming_attack_until = now + 2.4
+
+        color_team = getattr(bulle, "rb_color_team", None)
+        if color_team == "blau":
+            self.rb_catches_blau += 1
+        elif color_team == "rot":
+            self.rb_catches_rot += 1
+
+        unlock_badge("rb_catch_robber")
+        try:
+            catches = badge_store.inc("rb_catches_total", 1)
+            if int(catches or 0) >= 5:
+                unlock_badge("rb_hunter")
+        except Exception:
+            pass
+
+        mid = [raeuber.pos[0], raeuber.pos[1] + 0.3, raeuber.pos[2]]
+        for _ in range(18):
+            raeuber.particles.append(Particle(mid[:], color=(0.25, 0.65, 1.0), speed=0.12, size=0.14, life=0.75))
+        return True
 
     def _rb_apply_roles_to_players(self):
         """Apply the current round role mapping (blue/red -> bulle/raeuber) to all players."""
