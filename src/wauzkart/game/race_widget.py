@@ -2480,12 +2480,6 @@ class RaceWidget(QOpenGLWidget):
     def _collision(self, p1, p2):
         if p1.finished or p2.finished:
             return
-        if self.map_name == "Raeuber & Bulle":
-            pair = {getattr(p1, "team", None), getattr(p2, "team", None)}
-            if pair == {"bulle", "raeuber"} and not getattr(p1, "rb_caught", False) and not getattr(p2, "rb_caught", False):
-                p1.velocity *= 0.45
-                p2.velocity *= 0.45
-                return
         dx = p1.pos[0]-p2.pos[0]; dz = p1.pos[2]-p2.pos[2]
         dist = math.sqrt(dx*dx + dz*dz)
         if dist < p1.radius + p2.radius:
@@ -2495,6 +2489,13 @@ class RaceWidget(QOpenGLWidget):
             sep = (p1.radius+p2.radius-dist) + 0.5
             p1.pos[0] += ndx*sep/2; p1.pos[2] += ndz*sep/2
             p2.pos[0] -= ndx*sep/2; p2.pos[2] -= ndz*sep/2
+
+            if self.map_name == "Raeuber & Bulle":
+                pair = {getattr(p1, "team", None), getattr(p2, "team", None)}
+                if pair == {"bulle", "raeuber"} and not getattr(p1, "rb_caught", False) and not getattr(p2, "rb_caught", False):
+                    p1.velocity *= 0.78
+                    p2.velocity *= 0.78
+                    return
 
             # Raeuber & Bulle: In der Knopf-Zone (Befreiung) soll es kein CRASH! geueben,
             # damit das Drcken/Halten nicht durch Explosions-Crash sabotiert wird.

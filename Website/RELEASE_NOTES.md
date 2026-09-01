@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.46
+# Wauz Kart v1.0.47
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -14,6 +14,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - macOS DMG als `wauzkart-macos.dmg`
 - Windows-Installer hat jetzt einen eigenen Wauz-Kart-Look mit Wizard-Banner, Header-Logo und eigenen Setup-Texten
 - Raeuber & Bulle spielt jetzt battle-maessiger mit Items, Front-Fangen, Gefaengnis-Slots, Befreiungszaehlern und besserer Battle-KI
+- Raeuber & Bulle bremst Karts nicht mehr dauerhaft aus, wenn Bullen und Raeuber nur gleichzeitig in der Arena fahren
 - Update-Check beim Spielstart mit passendem Installer-Link fuer das aktuelle System
 - bessere Rennstart- und LAN-Fehlermeldungen ohne leere Null/None-Texte
 - WSL/Ubuntu-Fix: OpenGL-Projektion ohne GLU

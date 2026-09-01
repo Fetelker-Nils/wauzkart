@@ -1,5 +1,5 @@
 #define MyAppName "Wauz Kart"
-#define MyAppVersion "1.0.46"
+#define MyAppVersion "1.0.47"
 #define MyAppExeName "wauzkart.exe"
 
 [Setup]
