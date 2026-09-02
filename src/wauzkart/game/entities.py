@@ -39,6 +39,9 @@ class Player:
         self.speed_boost_timer = 0  # Zeit wann Boost endet
         self.speed_boost_active = False
         self.base_max_speed = self.max_speed
+        self.drift_charge = 0.0
+        self.drift_spark_level = 0
+        self.drift_boost_flash_until = 0.0
         self.last_item_collected_time = -float('inf')  # Cooldown fuer Item-Verfolgung
         self.last_box_collected_time = -float('inf')   # KI-Abklingzeit fuer Kstchen
 

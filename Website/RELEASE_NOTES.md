@@ -1,4 +1,4 @@
-# Wauz Kart v1.0.48
+# Wauz Kart v1.0.49
 
 Aktuelle Website-Release fuer Wauz Kart.
 
@@ -16,6 +16,7 @@ Aktuelle Website-Release fuer Wauz Kart.
 - Raeuber & Bulle spielt jetzt battle-maessiger mit Items, Front-Fangen, Gefaengnis-Slots, Befreiungszaehlern und besserer Battle-KI
 - Raeuber & Bulle bremst Karts nicht mehr dauerhaft aus, wenn Bullen und Raeuber nur gleichzeitig in der Arena fahren
 - Highlight-Videos haben jetzt eigene Schnittlogik pro Modus: Rennen, Raeuber & Bulle und Insignien-Diebstahl fuehlen sich unterschiedlich an
+- Neue Fahr-Features: Mini-Turbo durch Drift-Aufladung beim Lenken und ein Speed/Boost-HUD pro Spieler
 - Update-Check beim Spielstart mit passendem Installer-Link fuer das aktuelle System
 - bessere Rennstart- und LAN-Fehlermeldungen ohne leere Null/None-Texte
 - WSL/Ubuntu-Fix: OpenGL-Projektion ohne GLU

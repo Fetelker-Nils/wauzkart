@@ -1122,6 +1122,7 @@ class RaceWidget(QOpenGLWidget):
         self._draw_insignia_score_overlay(now, w, h)
         self._draw_item_roulette_overlays(now, w, h)
         self._draw_minimap_overlay(w, h)
+        self._draw_speed_panels(now, w, h)
         self._draw_countdown_overlay(now, w, h)
         self._draw_center_status_overlays(now, w, h)
 
@@ -1416,7 +1417,38 @@ class RaceWidget(QOpenGLWidget):
         if abs(pl.velocity) > 0.5:
             if lft: pl.rot += pl.turn_speed * dt; turning = True
             if rgt: pl.rot -= pl.turn_speed * dt; turning = True
+        self._update_player_drift(pl, dt, turning, fwd)
         self._physics(pl, dt, turning)
+
+    def _update_player_drift(self, pl, dt, turning, accelerating):
+        now = time.time()
+        if turning and accelerating and pl.velocity > pl.max_speed * 0.34 and pl.crash_timer <= now:
+            pl.drift_charge = min(2.4, getattr(pl, "drift_charge", 0.0) + dt)
+            old_level = getattr(pl, "drift_spark_level", 0)
+            level = 2 if pl.drift_charge >= 1.65 else (1 if pl.drift_charge >= 0.85 else 0)
+            pl.drift_spark_level = level
+            spark_color = (0.25, 0.75, 1.0) if level == 1 else ((1.0, 0.55, 0.08) if level >= 2 else (0.9, 0.9, 1.0))
+            if level > 0:
+                rad = math.radians(pl.rot)
+                side_x = math.cos(rad) * random.choice([-0.85, 0.85])
+                side_z = -math.sin(rad) * random.choice([-0.85, 0.85])
+                px = pl.pos[0] - math.sin(rad) * 0.9 + side_x
+                pz = pl.pos[2] - math.cos(rad) * 0.9 + side_z
+                pl.particles.append(Particle([px, pl.pos[1] + 0.05, pz], color=spark_color, speed=0.055, size=0.075, life=0.35))
+            if level > old_level:
+                for _ in range(8):
+                    pl.particles.append(Particle([pl.pos[0], pl.pos[1] + 0.25, pl.pos[2]], color=spark_color, speed=0.10, size=0.10, life=0.45))
+            return
+
+        charge = getattr(pl, "drift_charge", 0.0)
+        if charge >= 1.65:
+            self._apply_speed_boost_custom(pl, duration=1.8, multiplier=1.45)
+            pl.drift_boost_flash_until = now + 1.0
+        elif charge >= 0.85:
+            self._apply_speed_boost_custom(pl, duration=1.0, multiplier=1.25)
+            pl.drift_boost_flash_until = now + 0.7
+        pl.drift_charge = 0.0
+        pl.drift_spark_level = 0
 
     #  Intelligente AI-Hilfsmethoden 
     
@@ -3358,6 +3390,56 @@ class RaceWidget(QOpenGLWidget):
                     sub = "Waehlt..."
                 p.drawText(x + 108, y + 58, box_w - 122, 30, Qt.AlignLeft | Qt.AlignVCenter, sub)
 
+        p.end()
+
+    def _draw_speed_panels(self, now, w, h):
+        view_idxs = self._view_player_indices()
+        rects = self._human_viewport_rects(w, h)
+        if not rects:
+            return
+
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing, True)
+        for i in range(min(len(view_idxs), len(rects))):
+            pl = self.players[view_idxs[i]]
+            rx, ry, rw, rh = rects[i]
+            panel_w = max(170, min(230, rw - 30))
+            panel_h = 72
+            x = rx + 16
+            y = ry + rh - panel_h - 18
+
+            speed = max(0, int(abs(getattr(pl, "velocity", 0.0)) * 12.0))
+            charge = _clamp(getattr(pl, "drift_charge", 0.0) / 1.65, 0.0, 1.0)
+            boost_left = max(0.0, getattr(pl, "speed_boost_timer", 0.0) - now) if getattr(pl, "speed_boost_active", False) else 0.0
+
+            flash = now < getattr(pl, "drift_boost_flash_until", 0.0)
+            border = QColor(255, 170, 40, 245) if flash else QColor(255, 220, 70, 210)
+            p.setPen(QPen(border, 2))
+            p.setBrush(QColor(5, 8, 16, 170))
+            p.drawRoundedRect(x, y, panel_w, panel_h, 8, 8)
+
+            p.setPen(QColor(255, 255, 255, 240))
+            p.setFont(QFont("Arial", 22, QFont.Black))
+            p.drawText(x + 14, y + 8, panel_w - 28, 28, Qt.AlignLeft | Qt.AlignVCenter, f"{speed}")
+            p.setFont(QFont("Arial", 9, QFont.Bold))
+            p.setPen(QColor(230, 238, 248, 220))
+            p.drawText(x + 78, y + 16, panel_w - 92, 16, Qt.AlignLeft | Qt.AlignVCenter, "KMH")
+
+            bar_x = x + 14
+            bar_y = y + 45
+            bar_w = panel_w - 28
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(30, 36, 48, 230))
+            p.drawRoundedRect(bar_x, bar_y, bar_w, 10, 4, 4)
+            fill = int(bar_w * charge)
+            if fill > 0:
+                color = QColor(255, 145, 35, 245) if charge >= 1.0 else QColor(70, 190, 255, 235)
+                p.setBrush(color)
+                p.drawRoundedRect(bar_x, bar_y, fill, 10, 4, 4)
+            if boost_left > 0:
+                p.setPen(QColor(255, 225, 80, 245))
+                p.setFont(QFont("Arial", 9, QFont.Bold))
+                p.drawText(bar_x, bar_y + 13, bar_w, 14, Qt.AlignCenter, f"TURBO {boost_left:.1f}s")
         p.end()
 
     def _draw_countdown_overlay(self, now, w, h):
